@@ -1,5 +1,8 @@
 # Overview
 
+> **Category**: Integration | **Ecosystem Role**: MCP Server + A2A Agent
+> Built on [`agent-utilities`](https://github.com/Knuckles-Team/agent-utilities) — the unified AGI Harness.
+
 `dockerhub-api` ships three layers over the official **Docker Hub API v2**
 (`https://hub.docker.com`, OpenAPI "Docker HUB API v2-beta"):
 
@@ -71,3 +74,17 @@ entire domain. Modules are individually togglable with `*TOOL` environment flags
 - **Rate limiting** — `X-RateLimit-Limit/-Remaining/-Reset` are captured on every
   response; HTTP 429 is retried with a bounded `Retry-After` backoff (cap 15 s,
   3 retries by default).
+
+## Concept Registry
+
+This project implements or inherits the following ecosystem concepts:
+
+| Concept ID | Description | Source |
+|:-----------|:------------|:-------|
+| ECO-4.1 | MCP & Universal Skills | `agent-utilities` (inherited) |
+| ECO-4.2 | A2A Network & Consensus | `agent-utilities` (inherited) |
+| CONCEPT:HUB-1.1 | JWT auth lifecycle (`TokenManager`) | [`concepts.md`](concepts.md) |
+| CONCEPT:HUB-1.3 | Destructive-action gating | [`concepts.md`](concepts.md) |
+| CONCEPT:HUB-1.4 | Action-routed MCP surface | [`concepts.md`](concepts.md) |
+
+> 📖 **Full Registry**: See [`agent-utilities/docs/overview.md`](https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/overview.md) for the complete 5-Pillar concept index.

@@ -1,4 +1,11 @@
-# Concepts
+# Concept Registry — dockerhub-api
+
+> **Prefix**: `CONCEPT:HUB-1.x` | **Version**: 0.1.0
+
+This connector inherits the ecosystem bridge concept `ECO-4.0`
+(connector parity standard) from
+[`agent-utilities`](https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/overview.md),
+alongside `ECO-4.1` (MCP & Universal Skills) and `ECO-4.2` (A2A Network).
 
 The `CONCEPT:HUB-1.x` registry tracks the load-bearing capabilities of this
 connector. Markers appear in module docstrings so traceability sweeps can map

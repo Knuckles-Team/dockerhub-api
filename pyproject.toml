@@ -7,7 +7,7 @@ name = "dockerhub-api"
 version = "0.1.0"
 description = "Docker Hub API + MCP Server + A2A Server"
 readme = "README.md"
-classifiers = [ "Development Status :: 5 - Production/Stable", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3",]
+classifiers = [ "Development Status :: 5 - Production/Stable", "License :: OSI Approved :: MIT License", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3",]
 requires-python = ">=3.11, <3.15"
 dependencies = [ "agent-utilities>=0.47.0", "httpx>=0.27.0", "python-dotenv>=1.0.0",]
 [[project.authors]]
@@ -20,7 +20,7 @@ text = "MIT"
 [project.optional-dependencies]
 mcp = [ "agent-utilities[mcp]>=0.47.0",]
 agent = [ "agent-utilities[agent,logfire]>=0.47.0",]
-all = [ "dockerhub-api[mcp,agent]>=0.1.0",]
+all = [ "dockerhub-api[mcp,agent,logfire]>=0.1.0",]
 test = [
     "pytest-xdist>=3.6.0", "pytest", "pytest-asyncio", "pytest-cov",]
 
@@ -33,10 +33,10 @@ include-package-data = true
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py310"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.10"
 ignore_missing_imports = true
 check_untyped_defs = true
 
@@ -46,7 +46,7 @@ dev = [
 ]
 
 [tool.setuptools.package-data]
-dockerhub_api = [ "mcp_config.json", "main_agent.json",]
+dockerhub_api = [ "mcp_config.json", "main_agent.json", "agent_data/**",]
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "UP", "B",]

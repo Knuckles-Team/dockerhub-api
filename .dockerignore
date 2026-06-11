@@ -1,5 +1,5 @@
+ollama/
 venv/
-.venv/
 __pycache__/
 *.pyc
 .git/
@@ -7,14 +7,14 @@ __pycache__/
 scripts/
 tests/
 dockerhub_api.egg-info*
+models/
 .github/
 build/
-site/
 .bumpversion.cfg
 .pre-commit-config.yaml
 pytest.ini
+./tests/
 
 Dockerfile
 debug.Dockerfile
-agent.compose.yml
-mcp.compose.yml
+compose.yml
