@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "dockerhub-api": {
+      "command": "uv",
+      "args": [
+        "run",
+        "dockerhub-mcp"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "<YOUR_FASTMCP_LOG_LEVEL>",
+        "NO_COLOR": "<YOUR_NO_COLOR>",
+        "TERM": "<YOUR_TERM>",
+        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
+        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
+        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
+        "MCP_URL": "<YOUR_MCP_URL>",
+        "DOCKERHUB_URL": "<YOUR_DOCKERHUB_URL>",
+        "DOCKERHUB_USERNAME": "<YOUR_DOCKERHUB_USERNAME>",
+        "DOCKERHUB_TOKEN": "<YOUR_DOCKERHUB_TOKEN>",
+        "DOCKERHUB_SSL_VERIFY": "<YOUR_DOCKERHUB_SSL_VERIFY>",
+        "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
+        "AUTHTOOL": "True",
+        "REPOSTOOL": "True",
+        "ORGTOOL": "True",
+        "TEAMSTOOL": "True",
+        "AUDITTOOL": "True",
+        "SCIMTOOL": "True",
+        "ADMINTOOL": "True"
+      }
+    }
+  }
+}

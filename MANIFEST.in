@@ -1,0 +1,5 @@
+include README.md
+include requirements.txt
+recursive-include dockerhub_api *.py
+include dockerhub_api/mcp_config.json
+include dockerhub_api/main_agent.json
