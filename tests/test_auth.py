@@ -36,7 +36,7 @@ def test_requests_carry_bearer_header(hub, api):
 def test_token_manager_rejects_bad_credentials(hub):
     manager = TokenManager(
         identifier="tester",
-        secret="wrong-secret",
+        secret="wrong-secret",  # nosec B105 B106 — fake test credential
         url=BASE_URL,
         transport=httpx.MockTransport(hub.handler),
     )
@@ -47,7 +47,7 @@ def test_token_manager_rejects_bad_credentials(hub):
 def test_token_manager_invalidate_forces_remint(hub):
     manager = TokenManager(
         identifier="tester",
-        secret="dckr_pat_unit",
+        secret="dckr_pat_unit",  # nosec B105 B106 — fake test credential
         url=BASE_URL,
         transport=httpx.MockTransport(hub.handler),
     )
@@ -70,34 +70,34 @@ def test_decode_jwt_claims_tolerates_garbage():
 
 
 def test_create_auth_token_endpoint(api):
-    result = api.create_auth_token(identifier="tester", secret="dckr_pat_unit")
+    result = api.create_auth_token(identifier="tester", secret="dckr_pat_unit")  # nosec B105 B106 — fake test credential
     assert result["status_code"] == 200
     assert result["data"]["access_token"].count(".") == 2
 
 
 def test_legacy_login_is_deprecated_but_works(api):
     with pytest.deprecated_call():
-        result = api.login(username="tester", password="hunter2")
+        result = api.login(username="tester", password="hunter2")  # nosec B105 B106 — fake test credential
     assert result["status_code"] == 200
     assert result["data"]["token"]
 
 
 def test_legacy_login_surfaces_2fa_challenge(api):
     with pytest.deprecated_call():
-        result = api.login(username="totp-user", password="hunter2")
+        result = api.login(username="totp-user", password="hunter2")  # nosec B105 B106 — fake test credential
     assert result["status_code"] == 401
     assert result["data"]["login_2fa_token"] == "2fa-token-123"
 
 
 def test_two_factor_login_completes(api):
-    result = api.two_factor_login(login_2fa_token="2fa-token-123", code="123456")
+    result = api.two_factor_login(login_2fa_token="2fa-token-123", code="123456")  # nosec B105 B106 — fake test credential
     assert result["status_code"] == 200
     assert result["data"]["token"]
 
 
 def test_two_factor_login_invalid_code_raises(api):
     with pytest.raises(AuthError):
-        api.two_factor_login(login_2fa_token="2fa-token-123", code="000000")
+        api.two_factor_login(login_2fa_token="2fa-token-123", code="000000")  # nosec B105 B106 — fake test credential
 
 
 def test_expired_static_jwt_refresh_on_401(hub):
@@ -108,7 +108,7 @@ def test_expired_static_jwt_refresh_on_401(hub):
     manager = api._token_manager
     assert manager is not None
     manager.get_token()
-    manager._token = "stale-token"
+    manager._token = "stale-token"  # nosec B105 B106 — fake test credential
     manager._expires_at = time.time() + 3600
 
     class Unauthorized(MockHub):
@@ -192,7 +192,7 @@ def test_legacy_login_hard_failure_raises(hub):
 
     api = make_api(Failing())
     with pytest.deprecated_call(), pytest.raises(AuthError, match="account locked"):
-        api.login(username="tester", password="hunter2")
+        api.login(username="tester", password="hunter2")  # nosec B105 B106 — fake test credential
 
 
 def test_official_hub_tool_env_names_take_precedence(monkeypatch):
@@ -206,7 +206,7 @@ def test_official_hub_tool_env_names_take_precedence(monkeypatch):
     monkeypatch.setenv("DOCKERHUB_TOKEN", "dckr_pat_legacy")
     client = get_client()
     assert client._token_manager.identifier == "official-user"
-    assert client._token_manager._secret == "dckr_pat_official"
+    assert client._token_manager._secret == "dckr_pat_official"  # nosec B105 B106 — fake test credential
 
     monkeypatch.delenv("DOCKER_HUB_USER")
     monkeypatch.delenv("DOCKER_HUB_TOKEN")

@@ -36,7 +36,11 @@ def test_update_org_settings_payload(hub, api_destructive):
 
 def test_list_members_filters(hub, api):
     result = api.get_org_members(
-        org="acme", search="dev", member_type="member", role="member", page=1,
+        org="acme",
+        search="dev",
+        member_type="member",
+        role="member",
+        page=1,
         page_size=25,
     )
     assert result["data"]["count"] == 2

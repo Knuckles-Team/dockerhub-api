@@ -15,17 +15,13 @@ def test_a2a_manifest_shape():
 
 
 def test_main_agent_prompt():
-    prompt = json.loads(
-        (REPO_ROOT / "dockerhub_api" / "main_agent.json").read_text()
-    )
+    prompt = json.loads((REPO_ROOT / "dockerhub_api" / "main_agent.json").read_text())
     assert prompt["task"] == "main-agent"
     assert "Docker Hub" in prompt["input"]
 
 
 def test_packaged_mcp_config_is_valid_json():
-    config = json.loads(
-        (REPO_ROOT / "dockerhub_api" / "mcp_config.json").read_text()
-    )
+    config = json.loads((REPO_ROOT / "dockerhub_api" / "mcp_config.json").read_text())
     assert "mcpServers" in config
 
 

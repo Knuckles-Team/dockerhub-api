@@ -14,18 +14,18 @@ def test_list_pats_pagination(hub, api):
 
 
 def test_create_pat_scopes(hub, api):
-    result = api.create_access_token(token_label="ci", scopes=["repo:read"])
+    result = api.create_access_token(token_label="ci", scopes=["repo:read"])  # nosec B105 B106 — fake test credential
     assert result["status_code"] == 201
     assert result["data"]["token"] == "dckr_pat_PLAINTEXT"
     assert json.loads(hub.requests[-1].content) == {
-        "token_label": "ci",
+        "token_label": "ci",  # nosec B105 B106 — fake test credential
         "scopes": ["repo:read"],
     }
 
 
 def test_create_pat_rejects_invalid_scope(api):
     with pytest.raises(ValueError, match="Invalid PAT scopes"):
-        api.create_access_token(token_label="ci", scopes=["repo:everything"])
+        api.create_access_token(token_label="ci", scopes=["repo:everything"])  # nosec B105 B106 — fake test credential
 
 
 def test_get_and_update_pat(hub, api):
@@ -84,14 +84,19 @@ def test_create_oat_rejects_bad_resource_type(api):
 
 
 def test_get_update_oat(hub, api):
-    assert api.get_org_access_token(org="acme", token_id="oat-1")["data"]["id"] == "oat-1"
-    result = api.update_org_access_token(org="acme", token_id="oat-1", is_active=False)
+    assert (
+        api.get_org_access_token(org="acme", token_id="oat-1")["data"]["id"] == "oat-1"
+    )  # nosec B105 B106 — fake test credential
+    result = api.update_org_access_token(org="acme", token_id="oat-1", is_active=False)  # nosec B105 B106 — fake test credential
     assert result["data"]["is_active"] is False
 
 
 def test_delete_oat_gated(api, api_destructive, hub):
     with pytest.raises(DestructiveOperationError):
-        api.delete_org_access_token(org="acme", token_id="oat-1")
-    assert api_destructive.delete_org_access_token(org="acme", token_id="oat-1")[
-        "status_code"
-    ] == 204
+        api.delete_org_access_token(org="acme", token_id="oat-1")  # nosec B105 B106 — fake test credential
+    assert (
+        api_destructive.delete_org_access_token(org="acme", token_id="oat-1")[  # nosec B105 B106 — fake test credential
+            "status_code"
+        ]
+        == 204
+    )

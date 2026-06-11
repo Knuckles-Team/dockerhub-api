@@ -62,11 +62,12 @@ def test_scim_params_use_scim_casing():
 
 def test_pat_scope_validation():
     model = AccessTokenCreateModel(
-        token_label="ci", scopes=["repo:read", "repo:write"]
+        token_label="ci",
+        scopes=["repo:read", "repo:write"],  # nosec B105 B106 — fake test credential
     )
     assert model.payload is not None
     with pytest.raises(ValueError):
-        AccessTokenCreateModel(token_label="ci", scopes=[])
+        AccessTokenCreateModel(token_label="ci", scopes=[])  # nosec B105 B106 — fake test credential
 
 
 def test_bulk_invite_payload_includes_dry_run():
@@ -91,7 +92,7 @@ def test_page_models_type_results():
     assert page.results[0].name == "latest"
 
     tokens = AccessTokenPage.model_validate(
-        {"count": 1, "results": [{"uuid": "u", "token_label": "ci"}]}
+        {"count": 1, "results": [{"uuid": "u", "token_label": "ci"}]}  # nosec B105 B106 — fake test credential
     )
     assert tokens.results is not None
     assert tokens.results[0].uuid == "u"

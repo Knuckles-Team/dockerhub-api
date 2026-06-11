@@ -21,6 +21,23 @@
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Python API / CLI](#python-api--cli)
+  - [MCP](#mcp)
+  - [Agent (A2A)](#agent-a2a)
+- [Environment Variables](#environment-variables)
+- [Deployment](#deployment)
+- [Safety Model](#safety-model)
+- [Concepts](#concepts)
+- [License](#license)
+
+---
+
 ## Overview
 
 **Dockerhub Api** is a production-grade Agent and Model Context Protocol (MCP) server
@@ -51,12 +68,38 @@ members/settings/invites, teams, audit logs, and SCIM 2.0 provisioning.
 
 ---
 
-## CLI or API
+## Installation
+
+```bash
+pip install dockerhub-api            # API client only
+pip install "dockerhub-api[mcp]"     # + MCP server
+pip install "dockerhub-api[agent]"   # + A2A agent server
+pip install "dockerhub-api[all]"     # everything
+```
+
+| Extra | Adds |
+|---|---|
+| `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-utilities[mcp]` |
+| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-utilities[agent,logfire]` |
+| `all` | `mcp` + `agent` |
+| `test` | pytest toolchain for development |
+
+Or pull the published image:
+
+```bash
+docker pull knucklessg1/dockerhub-api:latest
+```
+
+---
+
+## Usage
+
+### Python API / CLI
 
 ```python
 from dockerhub_api.auth import get_client
 
-api = get_client()   # reads DOCKERHUB_URL / DOCKERHUB_USERNAME / DOCKERHUB_TOKEN
+api = get_client()   # reads DOCKERHUB_URL / DOCKER_HUB_USER / DOCKER_HUB_TOKEN
 
 repos = api.get_repositories(namespace="acme", ordering="-last_updated")
 api.create_repository(namespace="acme", name="release-images", is_private=True)
@@ -67,11 +110,9 @@ print(api.rate_limit)   # latest X-RateLimit-* snapshot
 Every client method returns a uniform envelope:
 `{"status_code": int, "data": ..., "rate_limit": {"limit", "remaining", "reset"}}`.
 
----
+### MCP
 
-## MCP
-
-### Available MCP Tools
+#### Available MCP Tools
 
 | Tool Module | Toggle Env Var | Enabled by Default | Description & Nested Actions |
 |---|---|---|---|
@@ -86,23 +127,55 @@ Every client method returns a uniform envelope:
 Run the server:
 
 ```bash
-pip install "dockerhub-api[mcp]"
-export DOCKERHUB_USERNAME=youruser
-export DOCKERHUB_TOKEN=dckr_pat_xxx
+export DOCKER_HUB_USER=youruser
+export DOCKER_HUB_TOKEN=dckr_pat_xxx
 dockerhub-mcp --transport streamable-http --host 0.0.0.0 --port 8000
+```
+
+### Agent (A2A)
+
+```bash
+dockerhub-agent --mcp-url http://localhost:8000/mcp --web
 ```
 
 ---
 
-## Agent (A2A)
+## Environment Variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DOCKERHUB_URL` | `https://hub.docker.com` | Docker Hub API base URL |
+| `DOCKER_HUB_USER` | — | Account identifier (official hub-tool name, primary) |
+| `DOCKER_HUB_TOKEN` | — | Password, PAT `dckr_pat_*`, or org access token (primary) |
+| `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` | — | Legacy fallback aliases for the two above |
+| `DOCKERHUB_JWT` | — | Optional pre-minted bearer (overrides credential exchange) |
+| `DOCKERHUB_SSL_VERIFY` | `True` | TLS certificate verification |
+| `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` | Enable deletes and org-settings writes |
+| `AUTHTOOL` … `ADMINTOOL` | `True` | Per-module MCP tool toggles (see table above) |
+| `HOST` / `PORT` / `TRANSPORT` | `0.0.0.0` / `8000` / `stdio` | MCP server bind & transport (`stdio`, `streamable-http`, `sse`) |
+| `AUTH_TYPE` | `none` | MCP server auth mode (Docker image) |
+| `MCP_URL` | — | MCP endpoint the A2A agent connects to |
+| `ENABLE_OTEL` | `True` | OpenTelemetry / Langfuse export via agent-utilities |
+| `EUNOMIA_TYPE` / `EUNOMIA_POLICY_FILE` / `EUNOMIA_REMOTE_URL` | `none` / `mcp_policies.json` / — | Eunomia access-governance middleware |
+| `FASTMCP_LOG_LEVEL` / `NO_COLOR` | — | FastMCP logging controls |
+
+A complete annotated template lives in [.env.example](.env.example).
+
+---
+
+## Deployment
+
+Docker Compose definitions ship in [docker/](docker/):
 
 ```bash
-pip install "dockerhub-api[agent]"
-dockerhub-agent --mcp-url http://localhost:8000/mcp --web
+cp .env.example .env       # fill in DOCKER_HUB_USER / DOCKER_HUB_TOKEN
+docker compose -f docker/mcp.compose.yml up -d     # MCP server only
+docker compose -f docker/agent.compose.yml up -d   # MCP server + A2A agent (port 9018)
 ```
 
-See [docs/deployment.md](docs/deployment.md) for Docker Compose deployments of
-both servers.
+Both services expose `/health` endpoints; see
+[docs/deployment.md](docs/deployment.md) for transports, Caddy ingress, and
+Technitium DNS guidance.
 
 ---
 

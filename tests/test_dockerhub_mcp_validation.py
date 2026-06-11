@@ -9,7 +9,7 @@ import pytest
 from fastmcp import Client
 
 import dockerhub_api.auth as hub_auth_module
-from tests.conftest import BASE_URL, MockHub
+from tests.conftest import BASE_URL
 
 EXPECTED_TOOLS = {
     "hub_auth",
@@ -30,7 +30,7 @@ def mcp_instance(hub, monkeypatch):
         return Api(
             url=BASE_URL,
             username="tester",
-            password="dckr_pat_unit",
+            password="dckr_pat_unit",  # nosec B105 B106 — fake test credential
             transport=httpx.MockTransport(hub.handler),
         )
 
@@ -107,7 +107,7 @@ async def test_auth_jwt_redacted_but_pat_visible_on_create(mcp_instance):
             {
                 "action": "create_token",
                 "params_json": json.dumps(
-                    {"identifier": "tester", "secret": "dckr_pat_unit"}
+                    {"identifier": "tester", "secret": "dckr_pat_unit"}  # nosec B105 B106 — fake test credential
                 ),
             },
         )
@@ -116,7 +116,7 @@ async def test_auth_jwt_redacted_but_pat_visible_on_create(mcp_instance):
             {
                 "action": "create_pat",
                 "params_json": json.dumps(
-                    {"token_label": "ci", "scopes": ["repo:read"]}
+                    {"token_label": "ci", "scopes": ["repo:read"]}  # nosec B105 B106 — fake test credential
                 ),
             },
         )
@@ -170,8 +170,8 @@ def test_redact_secrets_helper():
     from dockerhub_api.mcp import REDACTED, redact_secrets
 
     data = {
-        "access_token": "abc",
-        "nested": [{"password": "p", "token": "keepme"}],
+        "access_token": "abc",  # nosec B105 B106 — fake test credential
+        "nested": [{"password": "p", "token": "keepme"}],  # nosec B105 B106 — fake test credential
         "ok": 1,
     }
     redacted = redact_secrets(data)

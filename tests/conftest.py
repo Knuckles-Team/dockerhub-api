@@ -7,6 +7,7 @@ import base64
 import json
 import re
 import time
+from typing import Any
 
 import httpx
 import pytest
@@ -92,7 +93,10 @@ class MockHub:
                 429,
                 content=json.dumps({"detail": "rate limited"}).encode("utf-8"),
                 headers=self._headers(
-                    {"Content-Type": "application/json", "Retry-After": self.retry_after}
+                    {
+                        "Content-Type": "application/json",
+                        "Retry-After": self.retry_after,
+                    }
                 ),
             )
 
@@ -112,7 +116,7 @@ class MockHub:
             if body.get("username") == "totp-user":
                 return self._json(
                     401,
-                    {"detail": "OTP required", "login_2fa_token": "2fa-token-123"},
+                    {"detail": "OTP required", "login_2fa_token": "2fa-token-123"},  # nosec B105 B106 — fake test credential
                 )
             return self._json(200, {"token": make_jwt(exp=time.time() + 600)})
         if path == "/v2/users/2fa-login" and method == "POST":
@@ -131,7 +135,7 @@ class MockHub:
                         "results": [
                             {
                                 "uuid": "pat-1",
-                                "token_label": "ci",
+                                "token_label": "ci",  # nosec B105 B106 — fake test credential
                                 "scopes": ["repo:read"],
                                 "is_active": True,
                             }
@@ -143,7 +147,7 @@ class MockHub:
                     201,
                     {
                         "uuid": "pat-2",
-                        "token": "dckr_pat_PLAINTEXT",
+                        "token": "dckr_pat_PLAINTEXT",  # nosec B105 B106 — fake test credential
                         "token_label": body.get("token_label"),
                         "scopes": body.get("scopes"),
                         "is_active": True,
@@ -154,7 +158,8 @@ class MockHub:
             uuid = match.group(1)
             if method == "GET":
                 return self._json(
-                    200, {"uuid": uuid, "token_label": "ci", "is_active": True}
+                    200,
+                    {"uuid": uuid, "token_label": "ci", "is_active": True},  # nosec B105 B106 — fake test credential
                 )
             if method == "PATCH":
                 return self._json(200, {"uuid": uuid, **body})
@@ -171,7 +176,8 @@ class MockHub:
                 )
             if method == "POST":
                 return self._json(
-                    201, {"id": "oat-2", "token": "dckr_oat_PLAINTEXT", **body}
+                    201,
+                    {"id": "oat-2", "token": "dckr_oat_PLAINTEXT", **body},  # nosec B105 B106 — fake test credential
                 )
         match = re.fullmatch(r"/v2/orgs/([^/]+)/access-tokens/([^/]+)", path)
         if match:
@@ -317,18 +323,14 @@ class MockHub:
         if match:
             tag = match.group(3)
             if tag == "missing":
-                return (
-                    self._empty(404) if method == "HEAD" else self._json(404, {})
-                )
+                return self._empty(404) if method == "HEAD" else self._json(404, {})
             if method == "HEAD":
                 return self._empty(200)
             if method == "GET":
                 return self._json(
                     200, {"name": tag, "full_size": 123, "tag_status": "active"}
                 )
-        match = re.fullmatch(
-            r"/v2/namespaces/([^/]+)/repositories/([^/]+)/tags", path
-        )
+        match = re.fullmatch(r"/v2/namespaces/([^/]+)/repositories/([^/]+)/tags", path)
         if match:
             if method == "HEAD":
                 return self._empty(200)
@@ -344,9 +346,7 @@ class MockHub:
         if match:
             namespace, repo = match.groups()
             if repo == "missing":
-                return (
-                    self._empty(404) if method == "HEAD" else self._json(404, {})
-                )
+                return self._empty(404) if method == "HEAD" else self._json(404, {})
             if method == "HEAD":
                 return self._empty(200)
             if method == "GET":
@@ -361,9 +361,7 @@ class MockHub:
                     200,
                     {
                         "count": 1,
-                        "results": [
-                            {"name": "app", "namespace": match.group(1)}
-                        ],
+                        "results": [{"name": "app", "namespace": match.group(1)}],
                     },
                 )
             if method == "POST":
@@ -408,9 +406,7 @@ class MockHub:
                 200,
                 {
                     "totalResults": 1,
-                    "Resources": [
-                        {"id": "urn:ietf:params:scim:schemas:core:2.0:User"}
-                    ],
+                    "Resources": [{"id": "urn:ietf:params:scim:schemas:core:2.0:User"}],
                 },
                 content_type=scim,
             )
@@ -428,9 +424,7 @@ class MockHub:
                         "totalResults": 1,
                         "startIndex": int(params.get("startIndex", 1)),
                         "itemsPerPage": int(params.get("count", 50)),
-                        "Resources": [
-                            {"id": "scim-1", "userName": "jane@example.com"}
-                        ],
+                        "Resources": [{"id": "scim-1", "userName": "jane@example.com"}],
                     },
                     content_type=scim,
                 )
@@ -470,11 +464,11 @@ def hub() -> MockHub:
     return MockHub()
 
 
-def make_api(hub: MockHub, **overrides) -> Api:
-    options = {
+def make_api(hub: MockHub, **overrides: Any) -> Api:
+    options: dict[str, Any] = {
         "url": BASE_URL,
         "username": "tester",
-        "password": "dckr_pat_unit",
+        "password": "dckr_pat_unit",  # nosec B105 B106 — fake test credential
         "transport": httpx.MockTransport(hub.handler),
     }
     options.update(overrides)

@@ -64,13 +64,13 @@ def _static_api(status_code: int, payload: dict):
 
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/v2/auth/token":
-            return httpx.Response(200, json={"access_token": "x.y.z"})
+            return httpx.Response(200, json={"access_token": "x.y.z"})  # nosec B105 B106 — fake test credential
         return httpx.Response(status_code, json=payload)
 
     return Api(
         url=BASE_URL,
         username="tester",
-        password="dckr_pat_unit",
+        password="dckr_pat_unit",  # nosec B105 B106 — fake test credential
         transport=httpx.MockTransport(handler),
     )
 

@@ -27,7 +27,9 @@ def test_create_group(hub, api):
 
 
 def test_get_group(api):
-    assert api.get_group(org="acme", group_name="platform")["data"]["name"] == "platform"
+    assert (
+        api.get_group(org="acme", group_name="platform")["data"]["name"] == "platform"
+    )
 
 
 def test_update_and_patch_group(hub, api):
@@ -64,6 +66,4 @@ def test_group_members_roundtrip(hub, api, api_destructive):
         org="acme", group_name="platform", username="dev"
     )
     assert removed["status_code"] == 204
-    assert (
-        hub.requests[-1].url.path == "/v2/orgs/acme/groups/platform/members/dev"
-    )
+    assert hub.requests[-1].url.path == "/v2/orgs/acme/groups/platform/members/dev"
