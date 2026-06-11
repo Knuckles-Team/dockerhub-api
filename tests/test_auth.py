@@ -193,3 +193,22 @@ def test_legacy_login_hard_failure_raises(hub):
     api = make_api(Failing())
     with pytest.deprecated_call(), pytest.raises(AuthError, match="account locked"):
         api.login(username="tester", password="hunter2")
+
+
+def test_official_hub_tool_env_names_take_precedence(monkeypatch):
+    """DOCKER_HUB_USER / DOCKER_HUB_TOKEN (official hub-tool names) are the
+    primary credential env vars; legacy DOCKERHUB_* remain as fallbacks."""
+    from dockerhub_api.auth import get_client
+
+    monkeypatch.setenv("DOCKER_HUB_USER", "official-user")
+    monkeypatch.setenv("DOCKER_HUB_TOKEN", "dckr_pat_official")
+    monkeypatch.setenv("DOCKERHUB_USERNAME", "legacy-user")
+    monkeypatch.setenv("DOCKERHUB_TOKEN", "dckr_pat_legacy")
+    client = get_client()
+    assert client._token_manager.identifier == "official-user"
+    assert client._token_manager._secret == "dckr_pat_official"
+
+    monkeypatch.delenv("DOCKER_HUB_USER")
+    monkeypatch.delenv("DOCKER_HUB_TOKEN")
+    client = get_client()
+    assert client._token_manager.identifier == "legacy-user"

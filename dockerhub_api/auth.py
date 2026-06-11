@@ -189,9 +189,11 @@ def get_client(
     Credential resolution order:
 
     1. ``jwt`` / ``DOCKERHUB_JWT`` — a pre-minted bearer used as-is.
-    2. ``username`` + ``token`` / ``DOCKERHUB_USERNAME`` + ``DOCKERHUB_TOKEN``
-       — exchanged for a short-lived JWT via a shared :class:`TokenManager`
-       (the secret may be a password, a PAT ``dckr_pat_*``, or an org token).
+    2. ``username`` + ``token`` — from the OFFICIAL hub-tool environment names
+       ``DOCKER_HUB_USER`` + ``DOCKER_HUB_TOKEN`` (primary), falling back to
+       ``DOCKERHUB_USERNAME`` + ``DOCKERHUB_TOKEN`` — exchanged for a
+       short-lived JWT via a shared :class:`TokenManager` (the secret may be a
+       password, a PAT ``dckr_pat_*``, or an org token).
     3. Anonymous — public, unauthenticated endpoints only.
 
     ``DOCKERHUB_ALLOW_DESTRUCTIVE`` (default ``False``) gates deletes and
@@ -203,8 +205,18 @@ def get_client(
     url = str(
         url or config.get("url") or os.getenv("DOCKERHUB_URL") or DEFAULT_DOCKERHUB_URL
     )
-    username = username or config.get("username") or os.getenv("DOCKERHUB_USERNAME")
-    token = token or config.get("token") or os.getenv("DOCKERHUB_TOKEN")
+    username = (
+        username
+        or config.get("username")
+        or os.getenv("DOCKER_HUB_USER")
+        or os.getenv("DOCKERHUB_USERNAME")
+    )
+    token = (
+        token
+        or config.get("token")
+        or os.getenv("DOCKER_HUB_TOKEN")
+        or os.getenv("DOCKERHUB_TOKEN")
+    )
     jwt = jwt or config.get("jwt") or os.getenv("DOCKERHUB_JWT")
     if verify is None:
         verify = to_boolean(string=os.getenv("DOCKERHUB_SSL_VERIFY", "True"))
