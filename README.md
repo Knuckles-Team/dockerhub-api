@@ -43,15 +43,21 @@
 **Dockerhub Api** is a production-grade Agent and Model Context Protocol (MCP) server
 that wraps the official **Docker Hub API v2** (`https://hub.docker.com`): repositories
 and tags, immutable tags, personal and organization access tokens, organization
-members/settings/invites, teams, audit logs, and SCIM 2.0 provisioning.
+members/settings/invites, teams, audit logs, and SCIM 2.0 provisioning — plus the
+**Registry HTTP API v2** (`registry-1.docker.io`: manifests, blobs, digests,
+multi-arch inspection, OCI referrers, and gated push/delete) and **Docker Scout**
+(`api.scout.docker.com`: CVE/SBOM/policy intelligence).
 
 ---
 
 ## Key Features
 
-- **Consolidated Action-Routed MCP Tools:** Seven togglable tool modules
+- **Consolidated Action-Routed MCP Tools:** Nine togglable tool modules
   (`hub_auth`, `hub_repos`, `hub_org`, `hub_teams`, `hub_audit`, `hub_scim`,
-  `hub_admin`) minimize token overhead in LLM contexts.
+  `hub_admin`, `hub_registry`, `hub_scout`) minimize token overhead in LLM contexts.
+- **Three API surfaces, one package:** the Hub *management* API, the *Registry v2*
+  image API (its own host + per-repository scoped-token auth), and *Docker Scout*
+  — each with the same uniform envelope, redaction, and gating.
 - **JWT Auth Lifecycle:** Short-lived bearer minted from `POST /v2/auth/token`
   (password, PAT `dckr_pat_*`, or org access token), cached and refreshed before
   expiry, with one transparent re-mint on 401.
@@ -123,6 +129,37 @@ Every client method returns a uniform envelope:
 | `hub_audit` | `AUDITTOOL` | True | Audit trail: `logs`, `actions` |
 | `hub_scim` | `SCIMTOOL` | True | SCIM 2.0: `service_provider_config`, `resource_types`, `resource_type`, `schemas`, `schema`, `list_users`, `get_user`, `create_user`, `update_user` |
 | `hub_admin` | `ADMINTOOL` | True | Diagnostics: `rate_limit`, `whoami` (local JWT introspection) |
+| `hub_registry` | `REGISTRYTOOL` | True | Registry v2 (`registry-1.docker.io`): `api_version`, `list_tags`, `get_manifest`, `check_manifest`, `resolve_digest`, `list_platforms`, `get_config`, `inspect`, `get_blob`, `check_blob`, `list_referrers`, `delete_manifest`†, `delete_blob`†, `start_upload`†, `upload_chunk`†, `complete_upload`†, `mount_blob`†, `put_manifest`† |
+| `hub_scout` | `SCOUTTOOL` | True | Docker Scout (`api.scout.docker.com`): `summary`, `cves`, `vulnerabilities`, `sbom`, `compare`, `policies`, `policy_evaluation` |
+
+† Gated by `DOCKERHUB_ALLOW_DESTRUCTIVE` (push and delete are destructive).
+
+#### Registry v2 vs. the Hub management API
+
+`hub_registry` targets a **different host and auth model** than the other tools.
+The Hub management API (`hub.docker.com`) uses one JWT from `/v2/auth/token`; the
+Registry v2 API (`registry-1.docker.io`) authorizes each call with a
+**per-repository, per-action** bearer obtained from a token service via a
+`401 WWW-Authenticate` challenge. Both reuse the same `DOCKER_HUB_USER` /
+`DOCKER_HUB_TOKEN` credentials (anonymous works for public pulls). Single-segment
+repository names (e.g. `nginx`) are normalized to their official `library/` path.
+
+`_catalog` (registry-wide repository listing) is intentionally **not** implemented:
+Docker Hub does not issue the registry-scoped token it requires. The chunked push
+buffers each chunk in memory — it is intended for manifests, config, and
+attestation blobs, not as a replacement for `docker push` of large layers.
+
+```python
+from dockerhub_api.auth import get_registry_client, get_scout_client
+
+reg = get_registry_client()
+print(reg.inspect("nginx", "latest")["data"]["platforms"])      # multi-arch list
+digest = reg.resolve_digest("nginx", "latest")["data"]["digest"]
+print(reg.list_referrers("nginx", digest)["data"])              # SBOM/attestations
+
+scout = get_scout_client()
+print(scout.get_cves("myorg/app", reference="v1")["data"])      # CVE listing
+```
 
 Run the server:
 

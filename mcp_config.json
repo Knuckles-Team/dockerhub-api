@@ -18,6 +18,8 @@
         "DOCKER_HUB_USER": "<YOUR_DOCKER_HUB_USER>",
         "DOCKER_HUB_TOKEN": "<YOUR_DOCKER_HUB_TOKEN>",
         "DOCKERHUB_SSL_VERIFY": "<YOUR_DOCKERHUB_SSL_VERIFY>",
+        "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
+        "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
         "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
         "AUTHTOOL": "True",
         "REPOSTOOL": "True",
@@ -25,7 +27,9 @@
         "TEAMSTOOL": "True",
         "AUDITTOOL": "True",
         "SCIMTOOL": "True",
-        "ADMINTOOL": "True"
+        "ADMINTOOL": "True",
+        "REGISTRYTOOL": "True",
+        "SCOUTTOOL": "True"
       }
     }
   }

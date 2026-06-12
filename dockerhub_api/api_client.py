@@ -13,8 +13,10 @@ from dockerhub_api.api.api_client_auth import DockerHubApiAuth
 from dockerhub_api.api.api_client_groups import DockerHubApiGroups
 from dockerhub_api.api.api_client_org_access_tokens import DockerHubApiOrgAccessTokens
 from dockerhub_api.api.api_client_orgs import DockerHubApiOrgs
+from dockerhub_api.api.api_client_registry import RegistryApi
 from dockerhub_api.api.api_client_repositories import DockerHubApiRepositories
 from dockerhub_api.api.api_client_scim import DockerHubApiScim
+from dockerhub_api.api.api_client_scout import ScoutApi
 
 logger = get_logger(__name__)
 
@@ -29,7 +31,17 @@ class Api(
     DockerHubApiGroups,
     DockerHubApiScim,
 ):
-    """Full Docker Hub API surface: auth, tokens, repos, orgs, teams,
-    audit logs, and SCIM."""
+    """Full Docker Hub *management* API surface: auth, tokens, repos, orgs,
+    teams, audit logs, and SCIM.
+
+    The Registry v2 (:class:`RegistryApi`) and Docker Scout (:class:`ScoutApi`)
+    surfaces are separate clients — they target different hosts and auth models
+    (per-repository scoped tokens and the Scout API respectively) — and are
+    constructed via :func:`dockerhub_api.auth.get_registry_client` /
+    :func:`dockerhub_api.auth.get_scout_client`.
+    """
 
     __slots__ = ()
+
+
+__all__ = ["Api", "RegistryApi", "ScoutApi"]

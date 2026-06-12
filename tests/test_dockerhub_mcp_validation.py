@@ -9,7 +9,7 @@ import pytest
 from fastmcp import Client
 
 import dockerhub_api.auth as hub_auth_module
-from tests.conftest import BASE_URL
+from tests.conftest import BASE_URL, make_registry_api, make_scout_api
 
 EXPECTED_TOOLS = {
     "hub_auth",
@@ -19,11 +19,13 @@ EXPECTED_TOOLS = {
     "hub_audit",
     "hub_scim",
     "hub_admin",
+    "hub_registry",
+    "hub_scout",
 }
 
 
 @pytest.fixture
-def mcp_instance(hub, monkeypatch):
+def mcp_instance(hub, registry, scout, monkeypatch):
     from dockerhub_api.api_client import Api
 
     def fake_get_client(**_kwargs):
@@ -35,6 +37,12 @@ def mcp_instance(hub, monkeypatch):
         )
 
     monkeypatch.setattr(hub_auth_module, "get_client", fake_get_client)
+    monkeypatch.setattr(
+        hub_auth_module, "get_registry_client", lambda **_k: make_registry_api(registry)
+    )
+    monkeypatch.setattr(
+        hub_auth_module, "get_scout_client", lambda **_k: make_scout_api(scout)
+    )
     monkeypatch.setattr(sys, "argv", ["dockerhub-mcp"])
     from dockerhub_api.mcp_server import get_mcp_instance
 
@@ -179,6 +187,54 @@ def test_redact_secrets_helper():
     assert redacted["nested"][0]["password"] == REDACTED
     assert redacted["nested"][0]["token"] == "keepme"  # not a SECRET_KEY by default
     assert redacted["ok"] == 1
+
+
+async def test_hub_registry_actions(mcp_instance):
+    async with Client(mcp_instance) as client:
+        tags = await client.call_tool(
+            "hub_registry",
+            {"action": "list_tags", "params_json": json.dumps({"repo": "nginx"})},
+        )
+        inspected = await client.call_tool(
+            "hub_registry",
+            {
+                "action": "inspect",
+                "params_json": json.dumps({"repo": "nginx", "reference": "latest"}),
+            },
+        )
+    assert tool_payload(tags)["data"]["tags"] == ["latest", "1.0", "1.1"]
+    assert len(tool_payload(inspected)["data"]["platforms"]) == 2
+
+
+async def test_hub_registry_push_gated_via_mcp(mcp_instance):
+    async with Client(mcp_instance) as client:
+        result = await client.call_tool(
+            "hub_registry",
+            {
+                "action": "put_manifest",
+                "params_json": json.dumps(
+                    {
+                        "repo": "myorg/app",
+                        "reference": "v1",
+                        "manifest": {"schemaVersion": 2},
+                        "media_type": "application/vnd.docker.distribution.manifest.v2+json",
+                    }
+                ),
+            },
+        )
+    assert tool_payload(result)["error"]["type"] == "DestructiveOperationError"
+
+
+async def test_hub_scout_actions(mcp_instance):
+    async with Client(mcp_instance) as client:
+        cves = await client.call_tool(
+            "hub_scout",
+            {
+                "action": "cves",
+                "params_json": json.dumps({"repo": "myorg/app", "reference": "v1"}),
+            },
+        )
+    assert tool_payload(cves)["data"]["cves"][0]["id"] == "CVE-2026-0001"
 
 
 async def test_hub_org_and_teams_actions(mcp_instance):

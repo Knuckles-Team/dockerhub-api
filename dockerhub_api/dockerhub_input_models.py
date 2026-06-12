@@ -754,3 +754,43 @@ class ScimUserReplaceModel(BaseModel):
             self.payload["name"] = name
         email = self.email or self.user_name
         self.payload["emails"] = [{"value": email, "primary": True}]
+
+
+# --------------------------------------------------------------------------- #
+# Registry HTTP API v2
+# --------------------------------------------------------------------------- #
+
+
+class RegistryTagsListModel(BaseModel):
+    """``GET /v2/{repo}/tags/list`` (registry-native pagination)."""
+
+    repo: str = Field(description="Image repository, e.g. 'nginx' or 'org/app'")
+    n: int | None = Field(default=None, ge=1, description="Max tags to return")
+    last: str | None = Field(
+        default=None, description="Return tags lexically after this tag"
+    )
+    api_parameters: dict | None = Field(description="API parameters", default=None)
+
+    def model_post_init(self, _context):
+        self.api_parameters = {}
+        if self.n is not None:
+            self.api_parameters["n"] = self.n
+        if self.last:
+            self.api_parameters["last"] = self.last
+
+
+class RegistryReferrersModel(BaseModel):
+    """``GET /v2/{repo}/referrers/{digest}`` (OCI 1.1 referrers)."""
+
+    repo: str = Field(description="Image repository")
+    digest: str = Field(description="Subject manifest digest (sha256:...)")
+    artifact_type: str | None = Field(
+        default=None,
+        description="Filter referrers by artifactType, sent as 'artifactType'",
+    )
+    api_parameters: dict | None = Field(description="API parameters", default=None)
+
+    def model_post_init(self, _context):
+        self.api_parameters = {}
+        if self.artifact_type:
+            self.api_parameters["artifactType"] = self.artifact_type

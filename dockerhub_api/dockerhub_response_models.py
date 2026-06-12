@@ -330,6 +330,104 @@ class ScimSchema(HubModel):
     attributes: list[dict] | None = None
 
 
+# --------------------------------------------------------------------------- #
+# Registry HTTP API v2
+# --------------------------------------------------------------------------- #
+
+
+class RegistryTagList(HubModel):
+    """``GET /v2/{repo}/tags/list`` response."""
+
+    name: str | None = None
+    tags: list[str] | None = None
+
+
+class RegistryDescriptor(HubModel):
+    """An OCI content descriptor (config, layer, or child manifest)."""
+
+    mediaType: str | None = None
+    digest: str | None = None
+    size: int | None = None
+    artifactType: str | None = None
+    platform: dict | None = None
+    annotations: dict | None = None
+
+
+class RegistryManifest(HubModel):
+    """An image manifest, manifest list, or OCI index."""
+
+    schemaVersion: int | None = None
+    mediaType: str | None = None
+    artifactType: str | None = None
+    config: RegistryDescriptor | None = None
+    layers: list[RegistryDescriptor] | None = None
+    manifests: list[RegistryDescriptor] | None = None
+    subject: RegistryDescriptor | None = None
+    annotations: dict | None = None
+
+
+class RegistryPlatform(HubModel):
+    """A single platform entry resolved from a manifest list / OCI index."""
+
+    os: str | None = None
+    architecture: str | None = None
+    variant: str | None = None
+    digest: str | None = None
+    size: int | None = None
+    mediaType: str | None = None
+
+
+class ImageConfig(HubModel):
+    """A container image config blob (the ``application/...image.v1+json``)."""
+
+    architecture: str | None = None
+    os: str | None = None
+    variant: str | None = None
+    created: str | None = None
+    config: dict | None = None
+    rootfs: dict | None = None
+    history: list[dict] | None = None
+
+
+class ReferrerList(HubModel):
+    """``GET /v2/{repo}/referrers/{digest}`` response (an OCI index)."""
+
+    schemaVersion: int | None = None
+    mediaType: str | None = None
+    manifests: list[RegistryDescriptor] | None = None
+
+
+# --------------------------------------------------------------------------- #
+# Docker Scout
+# --------------------------------------------------------------------------- #
+
+
+class ScoutImageSummary(HubModel):
+    """A Docker Scout image-analysis summary (vulnerability roll-up)."""
+
+    digest: str | None = None
+    vulnerabilities: dict | list | None = None
+    policy: dict | list | None = None
+    sbom: dict | None = None
+
+
+class ScoutVulnerabilities(HubModel):
+    """A Docker Scout CVE / vulnerability listing."""
+
+    cves: list[dict] | None = None
+    vulnerabilities: list[dict] | None = None
+    items: list[dict] | None = None
+    count: int | None = None
+
+
+class ScoutPolicyEvaluation(HubModel):
+    """A Docker Scout policy evaluation result."""
+
+    policies: list[dict] | None = None
+    results: list[dict] | None = None
+    outcome: str | None = None
+
+
 def validate_lenient(model: type[BaseModel], data: Any) -> Any:
     """Validate ``data`` against ``model``; fall back to the raw data.
 

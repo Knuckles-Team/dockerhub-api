@@ -483,3 +483,364 @@ def api(hub) -> Api:
 @pytest.fixture
 def api_destructive(hub) -> Api:
     return make_api(hub, allow_destructive=True)
+
+
+# --------------------------------------------------------------------------- #
+# Registry HTTP API v2 — separate host, scoped-token challenge auth
+# --------------------------------------------------------------------------- #
+
+REGISTRY_URL = "https://registry-1.docker.io"
+REGISTRY_AUTH_REALM = "https://auth.docker.io/token"
+
+#: A digest the mock returns for resolved manifests.
+INDEX_DIGEST = "sha256:" + "a" * 64
+AMD64_DIGEST = "sha256:" + "b" * 64
+CONFIG_DIGEST = "sha256:" + "c" * 64
+
+MANIFEST_LIST_MEDIA = "application/vnd.docker.distribution.manifest.list.v2+json"
+IMAGE_MANIFEST_MEDIA = "application/vnd.docker.distribution.manifest.v2+json"
+CONFIG_MEDIA = "application/vnd.docker.container.image.v1+json"
+
+
+class MockRegistry:
+    """A scriptable in-memory Registry v2 + token service for MockTransport.
+
+    Models the challenge flow: an unauthenticated request to the registry gets
+    a 401 with ``WWW-Authenticate``; the client fetches a scoped token from the
+    token-service realm; the retried request succeeds.
+    """
+
+    def __init__(self, *, require_auth: bool = True):
+        self.requests: list[httpx.Request] = []
+        self.token_fetches: list[dict] = []
+        self.require_auth = require_auth
+        self.minted = 0
+
+    def _headers(self, extra: dict | None = None) -> dict:
+        headers = {"X-RateLimit-Limit": "180", "X-RateLimit-Remaining": "150"}
+        if extra:
+            headers.update(extra)
+        return headers
+
+    def _json(self, status, data, media="application/json", extra=None):
+        return httpx.Response(
+            status,
+            content=json.dumps(data).encode("utf-8"),
+            headers=self._headers({"Content-Type": media, **(extra or {})}),
+        )
+
+    def _challenge(self, scope: str) -> httpx.Response:
+        directive = (
+            f'Bearer realm="{REGISTRY_AUTH_REALM}",'
+            f'service="registry.docker.io",scope="{scope}"'
+        )
+        return httpx.Response(
+            401,
+            content=json.dumps({"errors": [{"code": "UNAUTHORIZED"}]}).encode("utf-8"),
+            headers=self._headers(
+                {"Content-Type": "application/json", "WWW-Authenticate": directive}
+            ),
+        )
+
+    def handler(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        url = request.url
+        host = url.host
+        path = url.path
+        method = request.method
+
+        # ---- token service ---- #
+        if host == "auth.docker.io":
+            self.minted += 1
+            params = dict(url.params)
+            self.token_fetches.append(params)
+            return httpx.Response(
+                200,
+                content=json.dumps(
+                    {"token": f"registry-token-{self.minted}", "expires_in": 300}
+                ).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+
+        # ---- registry: enforce the challenge once per request ---- #
+        if self.require_auth and "authorization" not in request.headers:
+            scope = self._scope_for(path, method)
+            return self._challenge(scope)
+
+        return self._registry_route(path, method, request) or self._json(
+            404, {"errors": [{"code": "NOT_FOUND", "path": path}]}
+        )
+
+    @staticmethod
+    def _scope_for(path: str, method: str) -> str:
+        match = re.match(r"/v2/(.+?)/(manifests|blobs|tags|referrers)", path)
+        repo = match.group(1) if match else "library/unknown"
+        actions = "pull"
+        if method in ("PUT", "PATCH", "POST"):
+            actions = "pull,push"
+        elif method == "DELETE":
+            actions = "pull,push,delete"
+        return f"repository:{repo}:{actions}"
+
+    def _registry_route(self, path, method, request):  # noqa: PLR0911,PLR0912
+        if path == "/v2/" and method == "GET":
+            return self._json(200, {})
+
+        # tags list
+        match = re.fullmatch(r"/v2/(.+)/tags/list", path)
+        if match and method == "GET":
+            return self._json(
+                200, {"name": match.group(1), "tags": ["latest", "1.0", "1.1"]}
+            )
+
+        # manifests (tag or digest)
+        match = re.fullmatch(r"/v2/(.+)/manifests/(.+)", path)
+        if match:
+            reference = match.group(2)
+            if method == "HEAD":
+                return httpx.Response(
+                    200,
+                    headers=self._headers(
+                        {
+                            "Docker-Content-Digest": INDEX_DIGEST,
+                            "Content-Type": MANIFEST_LIST_MEDIA,
+                        }
+                    ),
+                )
+            if method == "GET":
+                if reference == AMD64_DIGEST:
+                    return self._json(
+                        200,
+                        {
+                            "schemaVersion": 2,
+                            "mediaType": IMAGE_MANIFEST_MEDIA,
+                            "config": {
+                                "mediaType": CONFIG_MEDIA,
+                                "digest": CONFIG_DIGEST,
+                                "size": 1234,
+                            },
+                            "layers": [],
+                        },
+                        media=IMAGE_MANIFEST_MEDIA,
+                        extra={"Docker-Content-Digest": AMD64_DIGEST},
+                    )
+                # default: a multi-arch index
+                return self._json(
+                    200,
+                    {
+                        "schemaVersion": 2,
+                        "mediaType": MANIFEST_LIST_MEDIA,
+                        "manifests": [
+                            {
+                                "mediaType": IMAGE_MANIFEST_MEDIA,
+                                "digest": AMD64_DIGEST,
+                                "size": 528,
+                                "platform": {"os": "linux", "architecture": "amd64"},
+                            },
+                            {
+                                "mediaType": IMAGE_MANIFEST_MEDIA,
+                                "digest": "sha256:" + "d" * 64,
+                                "size": 529,
+                                "platform": {"os": "linux", "architecture": "arm64"},
+                            },
+                        ],
+                    },
+                    media=MANIFEST_LIST_MEDIA,
+                    extra={"Docker-Content-Digest": INDEX_DIGEST},
+                )
+            if method == "PUT":
+                return httpx.Response(
+                    201,
+                    headers=self._headers({"Docker-Content-Digest": INDEX_DIGEST}),
+                )
+            if method == "DELETE":
+                return httpx.Response(202, headers=self._headers())
+
+        # blobs
+        match = re.fullmatch(r"/v2/(.+)/blobs/(.+)", path)
+        if match:
+            if method == "GET":
+                return self._json(
+                    200,
+                    {
+                        "architecture": "amd64",
+                        "os": "linux",
+                        "config": {"Env": ["PATH=/usr/bin"], "Labels": {"x": "y"}},
+                        "rootfs": {"type": "layers", "diff_ids": []},
+                        "history": [{"created_by": "RUN echo hi"}],
+                    },
+                    media=CONFIG_MEDIA,
+                )
+            if method == "HEAD":
+                return httpx.Response(200, headers=self._headers())
+            if method == "DELETE":
+                return self._json(405, {"errors": [{"code": "UNSUPPORTED"}]})
+
+        # referrers
+        match = re.fullmatch(r"/v2/(.+)/referrers/(.+)", path)
+        if match and method == "GET":
+            return self._json(
+                200,
+                {
+                    "schemaVersion": 2,
+                    "mediaType": "application/vnd.oci.image.index.v1+json",
+                    "manifests": [
+                        {
+                            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                            "digest": "sha256:" + "e" * 64,
+                            "artifactType": "application/vnd.in-toto+json",
+                        }
+                    ],
+                },
+                media="application/vnd.oci.image.index.v1+json",
+            )
+
+        # blob upload session
+        match = re.fullmatch(r"/v2/(.+)/blobs/uploads/", path)
+        if match and method == "POST":
+            repo = match.group(1)
+            if "mount" in dict(request.url.params):
+                return httpx.Response(
+                    201,
+                    headers=self._headers(
+                        {"Docker-Content-Digest": dict(request.url.params)["mount"]}
+                    ),
+                )
+            location = f"/v2/{repo}/blobs/uploads/upload-uuid-1"
+            return httpx.Response(
+                202,
+                headers=self._headers(
+                    {"Location": location, "Docker-Upload-UUID": "upload-uuid-1"}
+                ),
+            )
+        match = re.fullmatch(r"/v2/(.+)/blobs/uploads/(.+)", path)
+        if match:
+            if method == "PATCH":
+                return httpx.Response(
+                    202,
+                    headers=self._headers(
+                        {"Location": path, "Range": "0-1023"}
+                    ),
+                )
+            if method == "PUT":
+                return httpx.Response(
+                    201,
+                    headers=self._headers(
+                        {"Docker-Content-Digest": dict(request.url.params).get("digest", "")}
+                    ),
+                )
+        return None
+
+
+def make_registry_api(registry: MockRegistry, **overrides: Any):
+    from dockerhub_api.api.api_client_registry import RegistryApi
+    from dockerhub_api.auth import RegistryTokenManager
+
+    transport = httpx.MockTransport(registry.handler)
+    options: dict[str, Any] = {
+        "url": REGISTRY_URL,
+        "registry_token_manager": RegistryTokenManager(
+            username="tester",
+            secret="dckr_pat_unit",  # nosec B105 B106 — fake test credential
+            transport=transport,
+        ),
+        "transport": transport,
+    }
+    options.update(overrides)
+    return RegistryApi(**options)
+
+
+@pytest.fixture
+def registry() -> MockRegistry:
+    return MockRegistry()
+
+
+@pytest.fixture
+def registry_api(registry):
+    return make_registry_api(registry)
+
+
+@pytest.fixture
+def registry_api_destructive(registry):
+    return make_registry_api(registry, allow_destructive=True)
+
+
+# --------------------------------------------------------------------------- #
+# Docker Scout — separate host, Hub-JWT auth
+# --------------------------------------------------------------------------- #
+
+SCOUT_URL = "https://api.scout.docker.com"
+
+
+class MockScout:
+    """A scriptable in-memory Docker Scout API for httpx.MockTransport."""
+
+    def __init__(self):
+        self.requests: list[httpx.Request] = []
+
+    def handler(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        host = request.url.host
+        path = request.url.path
+        if host == "hub.docker.com" and path == "/v2/auth/token":
+            return httpx.Response(
+                200,
+                content=json.dumps(
+                    {"access_token": make_jwt(exp=time.time() + 3600)}
+                ).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+
+        def ok(data):
+            return httpx.Response(
+                200,
+                content=json.dumps(data).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+
+        if path.endswith("/summary"):
+            return ok({"digest": CONFIG_DIGEST, "vulnerabilities": {"critical": 1}})
+        if path.endswith("/vulnerabilities"):
+            return ok({"cves": [{"id": "CVE-2026-0001", "severity": "critical"}]})
+        if path.endswith("/sbom"):
+            return ok({"bomFormat": "CycloneDX", "components": []})
+        if path.endswith("/compare"):
+            return ok({"added": [], "removed": []})
+        if path.endswith("/policy"):
+            return ok({"outcome": "passed", "policies": []})
+        if "/policies" in path:
+            return ok({"policies": [{"id": "default", "name": "Default"}]})
+        return httpx.Response(
+            404,
+            content=json.dumps({"detail": "not found"}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+
+
+def make_scout_api(scout: MockScout, **overrides: Any):
+    from dockerhub_api.api.api_client_scout import ScoutApi
+    from dockerhub_api.auth import TokenManager
+
+    transport = httpx.MockTransport(scout.handler)
+    options: dict[str, Any] = {
+        "url": SCOUT_URL,
+        "token_manager": TokenManager(
+            identifier="tester",
+            secret="dckr_pat_unit",  # nosec B105 B106 — fake test credential
+            url=BASE_URL,
+            transport=transport,
+        ),
+        "transport": transport,
+    }
+    options.update(overrides)
+    return ScoutApi(**options)
+
+
+@pytest.fixture
+def scout() -> MockScout:
+    return MockScout()
+
+
+@pytest.fixture
+def scout_api(scout):
+    return make_scout_api(scout)

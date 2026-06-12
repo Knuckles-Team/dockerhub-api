@@ -3,7 +3,8 @@
 
 CONCEPT:HUB-1.4 — action-routed MCP surface. Registers the consolidated,
 togglable tool modules (hub_auth, hub_repos, hub_org, hub_teams, hub_audit,
-hub_scim, hub_admin) on an agent-utilities FastMCP server.
+hub_scim, hub_admin, hub_registry, hub_scout) on an agent-utilities FastMCP
+server.
 """
 
 import warnings
@@ -29,8 +30,10 @@ from dockerhub_api.mcp import (
     register_audit_tools,
     register_auth_tools,
     register_org_tools,
+    register_registry_tools,
     register_repos_tools,
     register_scim_tools,
+    register_scout_tools,
     register_teams_tools,
 )
 
@@ -55,6 +58,8 @@ TOOL_REGISTRY = (
     ("AUDITTOOL", register_audit_tools),
     ("SCIMTOOL", register_scim_tools),
     ("ADMINTOOL", register_admin_tools),
+    ("REGISTRYTOOL", register_registry_tools),
+    ("SCOUTTOOL", register_scout_tools),
 )
 
 
@@ -70,7 +75,10 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
         version=__version__,
         instructions=(
             "Docker Hub API MCP Server - Manage repositories, tags, access "
-            "tokens, organizations, teams, audit logs, and SCIM provisioning."
+            "tokens, organizations, teams, audit logs, and SCIM provisioning; "
+            "plus Registry v2 image operations (manifests, blobs, digests, "
+            "multi-arch inspect, OCI referrers, gated push/delete) and Docker "
+            "Scout CVE/SBOM/policy intelligence."
         ),
     )
 

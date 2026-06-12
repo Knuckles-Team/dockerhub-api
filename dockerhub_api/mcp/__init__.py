@@ -31,6 +31,20 @@ def get_hub_client():
     return get_client()
 
 
+def get_registry_client():
+    """Resolve the Registry v2 client late (rebindable in tests/deployments)."""
+    from dockerhub_api.auth import get_registry_client as _factory
+
+    return _factory()
+
+
+def get_scout_client():
+    """Resolve the Docker Scout client late (rebindable in tests/deployments)."""
+    from dockerhub_api.auth import get_scout_client as _factory
+
+    return _factory()
+
+
 def parse_params(params_json: str) -> dict[str, Any]:
     """Parse the ``params_json`` tool argument, dropping ``None`` values."""
     kwargs = json.loads(params_json) if params_json else {}
@@ -97,8 +111,10 @@ from dockerhub_api.mcp.mcp_admin import register_admin_tools
 from dockerhub_api.mcp.mcp_audit import register_audit_tools
 from dockerhub_api.mcp.mcp_auth import register_auth_tools
 from dockerhub_api.mcp.mcp_org import register_org_tools
+from dockerhub_api.mcp.mcp_registry import register_registry_tools
 from dockerhub_api.mcp.mcp_repos import register_repos_tools
 from dockerhub_api.mcp.mcp_scim import register_scim_tools
+from dockerhub_api.mcp.mcp_scout import register_scout_tools
 from dockerhub_api.mcp.mcp_teams import register_teams_tools
 
 __all__ = [
@@ -107,14 +123,18 @@ __all__ = [
     "SECRET_KEYS",
     "error_envelope",
     "get_hub_client",
+    "get_registry_client",
+    "get_scout_client",
     "parse_params",
     "redact_secrets",
     "register_admin_tools",
     "register_audit_tools",
     "register_auth_tools",
     "register_org_tools",
+    "register_registry_tools",
     "register_repos_tools",
     "register_scim_tools",
+    "register_scout_tools",
     "register_teams_tools",
     "run_action",
 ]
