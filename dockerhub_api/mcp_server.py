@@ -37,7 +37,7 @@ from dockerhub_api.mcp import (
     register_teams_tools,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 print(f"Docker Hub MCP v{__version__}", file=sys.stderr)
 
 logger = get_logger(name="mcp_server")

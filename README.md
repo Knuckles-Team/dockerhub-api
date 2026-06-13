@@ -13,7 +13,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/dockerhub-api)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/dockerhub-api)
 
-*Version: 0.1.0*
+*Version: 0.2.0*
 
 > **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
 > interfaces, the integrated A2A agent server, and guidance on the backing
