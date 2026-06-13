@@ -693,7 +693,7 @@ concept → code.</p>
 </tr>
 <tr>
 <td><code>CONCEPT:HUB-1.4</code></td>
-<td><strong>Action-routed MCP surface</strong> — seven consolidated, togglable tools with secret redaction and error envelopes.</td>
+<td><strong>Action-routed MCP surface</strong> — nine consolidated, togglable tools with secret redaction and error envelopes.</td>
 <td><code>dockerhub_api/mcp/</code>, <code>dockerhub_api/mcp_server.py</code></td>
 </tr>
 <tr>
@@ -705,6 +705,31 @@ concept → code.</p>
 <td><code>CONCEPT:HUB-1.6</code></td>
 <td><strong>A2A agent server</strong> — Pydantic-AI graph agent over the MCP tool surface with AG-UI web interface.</td>
 <td><code>dockerhub_api/agent_server.py</code>, <code>a2a.json</code>, <code>dockerhub_api/main_agent.json</code></td>
+</tr>
+<tr>
+<td><code>CONCEPT:HUB-1.7</code></td>
+<td><strong>Registry v2 client + scoped-token auth</strong> — separate <code>registry-1.docker.io</code> client; per-repository, challenge-based bearer tokens (<code>401 WWW-Authenticate</code> → token service → retry) via <code>RegistryTokenManager</code>; tags, manifests, blobs, digest resolution, multi-arch platform/config inspection.</td>
+<td><code>dockerhub_api/auth.py</code> (<code>RegistryTokenManager</code>, <code>get_registry_client</code>), <code>dockerhub_api/api/api_client_registry_base.py</code>, <code>dockerhub_api/api/api_client_registry.py</code></td>
+</tr>
+<tr>
+<td><code>CONCEPT:HUB-1.8</code></td>
+<td><strong>Registry v2 MCP tool</strong> — <code>hub_registry</code> action surface (toggle <code>REGISTRYTOOL</code>) over the registry client.</td>
+<td><code>dockerhub_api/mcp/mcp_registry.py</code></td>
+</tr>
+<tr>
+<td><code>CONCEPT:HUB-1.9</code></td>
+<td><strong>OCI Referrers / attestation discovery</strong> — <code>GET /v2/{repo}/referrers/{digest}</code> surfaces SBOM and provenance attestation manifests referencing an image.</td>
+<td><code>dockerhub_api/api/api_client_registry.py</code> (<code>list_referrers</code>)</td>
+</tr>
+<tr>
+<td><code>CONCEPT:HUB-1.10</code></td>
+<td><strong>Chunked blob push</strong> — upload session (<code>POST</code>→<code>PATCH</code>→<code>PUT</code>), cross-repo <code>mount</code>, and <code>put_manifest</code>; all gated by <code>DOCKERHUB_ALLOW_DESTRUCTIVE</code>.</td>
+<td><code>dockerhub_api/api/api_client_registry.py</code></td>
+</tr>
+<tr>
+<td><code>CONCEPT:HUB-1.11</code></td>
+<td><strong>Docker Scout client + MCP tool</strong> — <code>api.scout.docker.com</code> CVE/vulnerability, SBOM, image summary, compare, and policy evaluation, reusing the Hub JWT; <code>hub_scout</code> action surface (toggle <code>SCOUTTOOL</code>).</td>
+<td><code>dockerhub_api/auth.py</code> (<code>get_scout_client</code>), <code>dockerhub_api/api/api_client_scout.py</code>, <code>dockerhub_api/mcp/mcp_scout.py</code></td>
 </tr>
 </tbody>
 </table>
