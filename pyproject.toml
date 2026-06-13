@@ -20,7 +20,7 @@ text = "MIT"
 [project.optional-dependencies]
 mcp = [ "agent-utilities[mcp]>=0.48.0",]
 agent = [ "agent-utilities[agent,logfire]>=0.48.0",]
-all = [ "dockerhub-api[mcp,agent,logfire]>=0.1.0",]
+all = [ "dockerhub-api[mcp,agent,logfire]>=0.2.0",]
 test = [
     "pytest-xdist>=3.6.0", "pytest", "pytest-asyncio", "pytest-cov",]
 
