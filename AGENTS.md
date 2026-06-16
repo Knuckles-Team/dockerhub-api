@@ -171,3 +171,15 @@ Work in the worktree and **commit often**. Each session must use a **distinct
 branch**. Finishing work: (1) `pre-commit run --all-files` green, (2) commit,
 (3) merge to main locally (`rm_worktree merge` or `git merge --no-ff`), pushing
 only when the user asks, (4) remove the worktree and delete the merged branch.
+
+<!-- BEGIN concept-coordination (generated) -->
+## Concept-ID Coordination (multi-session)
+
+Working in parallel with other sessions/worktrees? **Reserve a concept id before you write its `CONCEPT:` marker** so two sessions never collide:
+
+```bash
+agent-utilities --json concept reserve --ns KG-2   # or a package prefix, e.g. KEY
+```
+
+Full protocol (ledger, merge=union, reconcile, MCP/REST): <https://knuckles-team.github.io/agent-utilities/concept_coordination/>
+<!-- END concept-coordination (generated) -->
