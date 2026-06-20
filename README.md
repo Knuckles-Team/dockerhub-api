@@ -120,19 +120,24 @@ Every client method returns a uniform envelope:
 
 #### Available MCP Tools
 
-| Tool Module | Toggle Env Var | Enabled by Default | Description & Nested Actions |
-|---|---|---|---|
-| `hub_auth` | `AUTHTOOL` | True | Token lifecycle: `create_token`, `login` (deprecated), `two_factor_login`, `list_pats`, `create_pat`, `get_pat`, `update_pat`, `delete_pat`, `list_oats`, `create_oat`, `get_oat`, `update_oat`, `delete_oat` |
-| `hub_repos` | `REPOSTOOL` | True | Repositories & tags: `list`, `create`, `get`, `check`, `list_tags`, `check_tags`, `get_tag`, `check_tag`, `set_immutable_tags`, `verify_immutable_tags`, `assign_group` |
-| `hub_org` | `ORGTOOL` | True | Org admin: `get_settings`, `update_settings`, `list_members`, `export_members`, `update_member`, `remove_member`, `list_invites`, `delete_invite`, `resend_invite`, `bulk_invite` |
-| `hub_teams` | `TEAMSTOOL` | True | Teams: `list`, `create`, `get`, `update`, `patch`, `delete`, `list_members`, `add_member`, `remove_member` |
-| `hub_audit` | `AUDITTOOL` | True | Audit trail: `logs`, `actions` |
-| `hub_scim` | `SCIMTOOL` | True | SCIM 2.0: `service_provider_config`, `resource_types`, `resource_type`, `schemas`, `schema`, `list_users`, `get_user`, `create_user`, `update_user` |
-| `hub_admin` | `ADMINTOOL` | True | Diagnostics: `rate_limit`, `whoami` (local JWT introspection) |
-| `hub_registry` | `REGISTRYTOOL` | True | Registry v2 (`registry-1.docker.io`): `api_version`, `list_tags`, `get_manifest`, `check_manifest`, `resolve_digest`, `list_platforms`, `get_config`, `inspect`, `get_blob`, `check_blob`, `list_referrers`, `delete_manifest`†, `delete_blob`†, `start_upload`†, `upload_chunk`†, `complete_upload`†, `mount_blob`†, `put_manifest`† |
-| `hub_scout` | `SCOUTTOOL` | True | Docker Scout (`api.scout.docker.com`): `summary`, `cves`, `vulnerabilities`, `sbom`, `compare`, `policies`, `policy_evaluation` |
+_Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hook)._
 
-† Gated by `DOCKERHUB_ALLOW_DESTRUCTIVE` (push and delete are destructive).
+<!-- MCP-TOOLS-TABLE:START -->
+
+| MCP Tool | Toggle Env Var | Description |
+|----------|----------------|-------------|
+| `hub_admin` | `ADMINTOOL` | Client diagnostics: 'rate_limit' returns the latest |
+| `hub_audit` | `AUDITTOOL` | Read a Docker Hub account's audit trail: 'logs' lists events |
+| `hub_auth` | `AUTHTOOL` | Manage Docker Hub authentication, personal access tokens (PATs), |
+| `hub_org` | `ORGTOOL` | Manage a Docker Hub organization: settings (restricted images), |
+| `hub_registry` | `REGISTRYTOOL` | Docker Registry v2 image operations (``registry-1.docker.io``): |
+| `hub_repos` | `REPOSITORIESTOOL` | Manage Docker Hub repositories: list/create/inspect repositories, |
+| `hub_scim` | `SCIMTOOL` | Docker Hub SCIM 2.0: service discovery (ServiceProviderConfig, |
+| `hub_scout` | `SCOUTTOOL` | Docker Scout image intelligence (``api.scout.docker.com``): |
+| `hub_teams` | `TEAMSTOOL` | Manage Docker Hub organization groups (teams) and their members. |
+
+_9 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
+<!-- MCP-TOOLS-TABLE:END -->
 
 #### Registry v2 vs. the Hub management API
 
