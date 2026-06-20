@@ -131,7 +131,7 @@ _Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hoo
 | `hub_auth` | `AUTHTOOL` | Manage Docker Hub authentication, personal access tokens (PATs), |
 | `hub_org` | `ORGTOOL` | Manage a Docker Hub organization: settings (restricted images), |
 | `hub_registry` | `REGISTRYTOOL` | Docker Registry v2 image operations (``registry-1.docker.io``): |
-| `hub_repos` | `REPOSITORIESTOOL` | Manage Docker Hub repositories: list/create/inspect repositories, |
+| `hub_repos` | `REPOSTOOL` | Manage Docker Hub repositories: list/create/inspect repositories, |
 | `hub_scim` | `SCIMTOOL` | Docker Hub SCIM 2.0: service discovery (ServiceProviderConfig, |
 | `hub_scout` | `SCOUTTOOL` | Docker Scout image intelligence (``api.scout.docker.com``): |
 | `hub_teams` | `TEAMSTOOL` | Manage Docker Hub organization groups (teams) and their members. |
