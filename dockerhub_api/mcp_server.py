@@ -20,20 +20,25 @@ import os
 import sys
 from typing import Any
 
-from agent_utilities.base_utilities import to_boolean
-from agent_utilities.mcp_utilities import create_mcp_server, load_config
+from agent_utilities.mcp_utilities import (
+    create_mcp_server,
+    load_config,
+    register_tool_surface,
+)
 from fastmcp.utilities.logging import get_logger
 
+from dockerhub_api.api_client import Api
+from dockerhub_api.auth import get_client
 from dockerhub_api.mcp import (
-    register_admin_tools,
-    register_audit_tools,
-    register_auth_tools,
-    register_org_tools,
-    register_registry_tools,
-    register_repos_tools,
-    register_scim_tools,
-    register_scout_tools,
-    register_teams_tools,
+    register_admin_tools,  # noqa: F401
+    register_audit_tools,  # noqa: F401
+    register_auth_tools,  # noqa: F401
+    register_org_tools,  # noqa: F401
+    register_registry_tools,  # noqa: F401
+    register_repos_tools,  # noqa: F401
+    register_scim_tools,  # noqa: F401
+    register_scout_tools,  # noqa: F401
+    register_teams_tools,  # noqa: F401
 )
 
 __version__ = "0.5.0"
@@ -41,25 +46,6 @@ print(f"Docker Hub MCP v{__version__}", file=sys.stderr)
 
 logger = get_logger(name="mcp_server")
 logger.setLevel(logging.DEBUG)
-
-DEFAULT_DOCKERHUB_SSL_VERIFY = to_boolean(
-    string=os.getenv("DOCKERHUB_SSL_VERIFY", "True")
-)
-DEFAULT_DOCKERHUB_URL = os.getenv("DOCKERHUB_URL", "https://hub.docker.com")
-DEFAULT_DOCKERHUB_TOKEN = os.getenv("DOCKERHUB_TOKEN", None)
-
-#: (env toggle, register function) — every consolidated tool module.
-TOOL_REGISTRY = (
-    ("AUTHTOOL", register_auth_tools),
-    ("REPOSTOOL", register_repos_tools),
-    ("ORGTOOL", register_org_tools),
-    ("TEAMSTOOL", register_teams_tools),
-    ("AUDITTOOL", register_audit_tools),
-    ("SCIMTOOL", register_scim_tools),
-    ("ADMINTOOL", register_admin_tools),
-    ("REGISTRYTOOL", register_registry_tools),
-    ("SCOUTTOOL", register_scout_tools),
-)
 
 
 def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
@@ -81,11 +67,13 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
         ),
     )
 
-    registered_tags: list[str] = []
-    for toggle, register in TOOL_REGISTRY:
-        if to_boolean(string=os.getenv(toggle, "True")):
-            register(mcp)
-            registered_tags.append(toggle)
+    registered_tags = register_tool_surface(
+        mcp,
+        client_cls=Api,
+        get_client=get_client,
+        service="dockerhub-api",
+        tools_module=sys.modules[__name__],
+    )
 
     for mw in middlewares:
         mcp.add_middleware(mw)

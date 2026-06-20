@@ -19,13 +19,13 @@ Secrets are never logged; only derived metadata (expiry, identifier) is.
 import base64
 import binascii
 import json
-import os
 import threading
 import time
 from typing import Any
 
 import httpx
-from agent_utilities.base_utilities import get_logger, to_boolean
+from agent_utilities.base_utilities import get_logger
+from agent_utilities.core.config import setting
 from agent_utilities.core.exceptions import AuthError
 
 logger = get_logger(__name__)
@@ -313,27 +313,28 @@ def get_client(
 
     config = config or {}
     url = str(
-        url or config.get("url") or os.getenv("DOCKERHUB_URL") or DEFAULT_DOCKERHUB_URL
+        url
+        or config.get("url")
+        or setting("DOCKERHUB_URL", None)
+        or DEFAULT_DOCKERHUB_URL
     )
     username = (
         username
         or config.get("username")
-        or os.getenv("DOCKER_HUB_USER")
-        or os.getenv("DOCKERHUB_USERNAME")
+        or setting("DOCKER_HUB_USER", None)
+        or setting("DOCKERHUB_USERNAME", None)
     )
     token = (
         token
         or config.get("token")
-        or os.getenv("DOCKER_HUB_TOKEN")
-        or os.getenv("DOCKERHUB_TOKEN")
+        or setting("DOCKER_HUB_TOKEN", None)
+        or setting("DOCKERHUB_TOKEN", None)
     )
-    jwt = jwt or config.get("jwt") or os.getenv("DOCKERHUB_JWT")
+    jwt = jwt or config.get("jwt") or setting("DOCKERHUB_JWT", None)
     if verify is None:
-        verify = to_boolean(string=os.getenv("DOCKERHUB_SSL_VERIFY", "True"))
+        verify = setting("DOCKERHUB_SSL_VERIFY", True)
     if allow_destructive is None:
-        allow_destructive = to_boolean(
-            string=os.getenv("DOCKERHUB_ALLOW_DESTRUCTIVE", "False")
-        )
+        allow_destructive = setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
 
     if jwt:
         logger.info("Using pre-minted Docker Hub JWT")
@@ -376,14 +377,14 @@ def _resolve_credentials(
     username = (
         username
         or config.get("username")
-        or os.getenv("DOCKER_HUB_USER")
-        or os.getenv("DOCKERHUB_USERNAME")
+        or setting("DOCKER_HUB_USER", None)
+        or setting("DOCKERHUB_USERNAME", None)
     )
     token = (
         token
         or config.get("token")
-        or os.getenv("DOCKER_HUB_TOKEN")
-        or os.getenv("DOCKERHUB_TOKEN")
+        or setting("DOCKER_HUB_TOKEN", None)
+        or setting("DOCKERHUB_TOKEN", None)
     )
     return username, token
 
@@ -411,21 +412,19 @@ def get_registry_client(
     url = str(
         url
         or config.get("registry_url")
-        or os.getenv("DOCKER_REGISTRY_URL")
+        or setting("DOCKER_REGISTRY_URL", None)
         or DEFAULT_REGISTRY_URL
     )
     realm = str(
         config.get("registry_auth_realm")
-        or os.getenv("DOCKER_REGISTRY_AUTH_URL")
+        or setting("DOCKER_REGISTRY_AUTH_URL", None)
         or DEFAULT_REGISTRY_AUTH_REALM
     )
     username, token = _resolve_credentials(username, token, config)
     if verify is None:
-        verify = to_boolean(string=os.getenv("DOCKERHUB_SSL_VERIFY", "True"))
+        verify = setting("DOCKERHUB_SSL_VERIFY", True)
     if allow_destructive is None:
-        allow_destructive = to_boolean(
-            string=os.getenv("DOCKERHUB_ALLOW_DESTRUCTIVE", "False")
-        )
+        allow_destructive = setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
 
     token_manager = RegistryTokenManager(
         username=username,
@@ -470,16 +469,16 @@ def get_scout_client(
     url = str(
         url
         or config.get("scout_url")
-        or os.getenv("DOCKER_SCOUT_URL")
+        or setting("DOCKER_SCOUT_URL", None)
         or DEFAULT_SCOUT_URL
     )
     hub_url = str(
-        config.get("url") or os.getenv("DOCKERHUB_URL") or DEFAULT_DOCKERHUB_URL
+        config.get("url") or setting("DOCKERHUB_URL", None) or DEFAULT_DOCKERHUB_URL
     )
-    jwt = jwt or config.get("jwt") or os.getenv("DOCKERHUB_JWT")
+    jwt = jwt or config.get("jwt") or setting("DOCKERHUB_JWT", None)
     username, token = _resolve_credentials(username, token, config)
     if verify is None:
-        verify = to_boolean(string=os.getenv("DOCKERHUB_SSL_VERIFY", "True"))
+        verify = setting("DOCKERHUB_SSL_VERIFY", True)
 
     if jwt:
         return ScoutApi(url=url, token=jwt, verify=verify, transport=transport)
