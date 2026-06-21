@@ -28,6 +28,12 @@ test = [
 dockerhub-mcp = "dockerhub_api.mcp_server:mcp_server"
 dockerhub-agent = "dockerhub_api.agent_server:agent_server"
 
+[project.entry-points."agent_utilities.skill_providers"]
+dockerhub-api = "dockerhub_api.skills"
+
+[project.entry-points."agent_utilities.prompt_providers"]
+dockerhub-api = "dockerhub_api.prompts"
+
 [tool.setuptools]
 include-package-data = true
 
@@ -46,7 +52,7 @@ dev = [
 ]
 
 [tool.setuptools.package-data]
-dockerhub_api = [ "mcp_config.json", "main_agent.json", "agent_data/**",]
+dockerhub_api = [ "mcp_config.json", "main_agent.json", "agent_data/**", "prompts/**", "skills/**",]
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "UP", "B",]
