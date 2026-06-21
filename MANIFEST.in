@@ -1,4 +1,4 @@
 include LICENSE
 include README.md
 include requirements.txt
-recursive-include dockerhub_api *.py *.json
+recursive-include dockerhub_api *.py *.json *.md *.yaml *.yml
