@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   dockerhub-api-mcp:
-    image: knucklessg1/dockerhub-api:latest
+    image: knucklessg1/dockerhub-api:mcp
     container_name: dockerhub-api-mcp
     hostname: dockerhub-api-mcp
     restart: always
