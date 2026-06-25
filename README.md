@@ -247,6 +247,69 @@ dockerhub-agent --mcp-url http://localhost:8000/mcp --web
 
 ## Environment Variables
 
+<!-- ENV-VARS-TABLE:START -->
+
+#### Package environment variables
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `HOST` | `0.0.0.0` |  |
+| `PORT` | `8000` |  |
+| `TRANSPORT` | `stdio` | options: stdio, streamable-http, sse |
+| `FASTMCP_LOG_LEVEL` | `ERROR` |  |
+| `NO_COLOR` | `1` |  |
+| `ENABLE_OTEL` | `True` |  |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:8080/api/public/otel` |  |
+| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` | `pk-...` |  |
+| `OTEL_EXPORTER_OTLP_SECRET_KEY` | `sk-...` |  |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` |  |
+| `EUNOMIA_TYPE` | `none` | options: none, embedded, remote |
+| `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
+| `EUNOMIA_REMOTE_URL` | `http://eunomia-server:8000` |  |
+| `DOCKER_HUB_USER` | — | Official hub-tool credential names (primary): |
+| `DOCKER_HUB_TOKEN` | — |  |
+| `DOCKERHUB_URL` | `https://hub.docker.com` | Fallback aliases: DOCKERHUB_USERNAME / DOCKERHUB_TOKEN / DOCKERHUB_JWT |
+| `DOCKERHUB_USERNAME` | `your_dockerhub_username` |  |
+| `DOCKERHUB_TOKEN` | `dckr_pat_your_personal_access_token` | password, PAT, or org access token |
+| `DOCKERHUB_JWT` | — | optional pre-minted bearer (overrides the above) |
+| `DOCKERHUB_SSL_VERIFY` | `True` |  |
+| `DOCKER_REGISTRY_URL` | `https://registry-1.docker.io` |  |
+| `DOCKER_REGISTRY_AUTH_URL` | `https://auth.docker.io/token` | token-service realm; auto-discovered from the 401 challenge |
+| `DOCKER_SCOUT_URL` | `https://api.scout.docker.com` |  |
+| `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` |  |
+| `AUTHTOOL` | `True` |  |
+| `REPOSTOOL` | `True` |  |
+| `ORGTOOL` | `True` |  |
+| `TEAMSTOOL` | `True` |  |
+| `AUDITTOOL` | `True` |  |
+| `SCIMTOOL` | `True` |  |
+| `ADMINTOOL` | `True` |  |
+| `REGISTRYTOOL` | `True` |  |
+| `SCOUTTOOL` | `True` |  |
+
+#### Inherited agent-utilities variables (apply to every connector)
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `MCP_TOOL_MODE` | `condensed` | Tool surface: `condensed` | `verbose` | `both` |
+| `MCP_ENABLED_TOOLS` | — | Comma-separated tool allow-list |
+| `MCP_DISABLED_TOOLS` | — | Comma-separated tool deny-list |
+| `MCP_ENABLED_TAGS` | — | Comma-separated tag allow-list |
+| `MCP_DISABLED_TAGS` | — | Comma-separated tag deny-list |
+| `MCP_CLIENT_AUTH` | — | Outbound MCP auth (`oidc-client-credentials` for fleet calls) |
+| `OIDC_CLIENT_ID` | — | OIDC client id (service-account auth) |
+| `OIDC_CLIENT_SECRET` | — | OIDC client secret (service-account auth) |
+| `DEBUG` | `False` | Verbose logging |
+| `PYTHONUNBUFFERED` | `1` | Unbuffered stdout (recommended in containers) |
+| `MCP_URL` | `http://localhost:8000/mcp` | URL of the MCP server the agent connects to |
+| `PROVIDER` | `openai` | LLM provider for the agent |
+| `MODEL_ID` | `gpt-4o` | Model id for the agent |
+| `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
+
+_33 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+<!-- ENV-VARS-TABLE:END -->
+
+
 | Variable | Default | Purpose |
 |---|---|---|
 | `DOCKERHUB_URL` | `https://hub.docker.com` | Docker Hub API base URL |
