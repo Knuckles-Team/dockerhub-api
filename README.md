@@ -90,11 +90,43 @@ pip install "dockerhub-api[all]"     # everything
 | `all` | `mcp` + `agent` |
 | `test` | pytest toolchain for development |
 
-Or pull the published image:
+```bash
+# MCP server only (recommended for tool hosting — slim deps)
+uv pip install "dockerhub-api[mcp]"
+
+# Full agent runtime (Pydantic AI + epistemic-graph engine)
+uv pip install "dockerhub-api[agent]"
+
+# Everything (development)
+uv pip install "dockerhub-api[all]"      # or: python -m pip install "dockerhub-api[all]"
+```
+
+### Container images (`:mcp` vs `:agent`)
+
+One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `--target`:
+
+| Image tag | Build target | Contents | Entrypoint |
+|-----------|--------------|----------|------------|
+| `knucklessg1/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **slim**, no engine/`pydantic-ai`/`dspy`/`llama-index`/`tree-sitter` | `dockerhub-mcp` |
+| `knucklessg1/dockerhub-api:latest` | `--target agent` (default) | `dockerhub-api[agent]` — **full** agent runtime + epistemic-graph engine | `dockerhub-agent` |
 
 ```bash
-docker pull knucklessg1/dockerhub-api:latest
+docker build --target mcp   -t knucklessg1/dockerhub-api:mcp    docker/   # slim MCP server
+docker build --target agent -t knucklessg1/dockerhub-api:latest docker/   # full agent
 ```
+
+`docker/mcp.compose.yml` runs the slim `:mcp` server; `docker/agent.compose.yml` runs the
+agent (`:latest`) with a co-located `:mcp` sidecar.
+
+### Knowledge-graph database (`epistemic-graph`)
+
+The **full agent** (`[agent]` / `:latest`) embeds the **epistemic-graph** engine (pulled in
+transitively via `agent-utilities[agent]`). For production — or to share one knowledge graph
+across multiple agents — run **epistemic-graph as its own database container** and point the
+agent at it instead of embedding it. Deployment recipes (single-node + Raft HA), connection
+config, and the full database architecture (with diagrams) are documented in the
+[epistemic-graph deployment guide](https://knuckles-team.github.io/epistemic-graph/deployment/).
+The slim `[mcp]` server does **not** require the database.
 
 ---
 
@@ -138,6 +170,37 @@ _Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hoo
 
 _9 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
 <!-- MCP-TOOLS-TABLE:END -->
+
+#### MCP Configuration Examples
+
+> **Install the slim `[mcp]` extra.** All examples below install
+> `dockerhub-api[mcp]` — the MCP-server extra that pulls only the FastMCP /
+> FastAPI tooling (`agent-utilities[mcp]`). It deliberately **excludes** the heavy
+> agent runtime (the epistemic-graph engine, `pydantic-ai`, `dspy`, `llama-index`,
+> `tree-sitter`), so `uvx`/container installs are dramatically smaller and faster.
+> Use the full `[agent]` extra only when you need the integrated Pydantic AI agent
+> (see [Installation](#installation)).
+
+Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
+
+```json
+{
+  "mcpServers": {
+    "dockerhub-api": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "dockerhub-api[mcp]",
+        "dockerhub-mcp"
+      ],
+      "env": {
+        "DOCKER_HUB_USER": "your_dockerhub_user_here",
+        "DOCKER_HUB_TOKEN": "your_dockerhub_token_here"
+      }
+    }
+  }
+}
+```
 
 #### Registry v2 vs. the Hub management API
 
