@@ -169,9 +169,9 @@ def test_tool_toggles_disable_modules(hub, monkeypatch):
     from dockerhub_api.mcp_server import get_mcp_instance
 
     _mcp, _args, _middlewares, registered = get_mcp_instance()
-    assert "SCIMTOOL" not in registered
-    assert "AUDITTOOL" not in registered
-    assert "REPOSTOOL" in registered
+    assert "scim" not in registered
+    assert "audit" not in registered
+    assert "repos" in registered
 
 
 def test_redact_secrets_helper():
