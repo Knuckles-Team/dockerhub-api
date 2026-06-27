@@ -156,6 +156,8 @@ _Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hoo
 
 <!-- MCP-TOOLS-TABLE:START -->
 
+#### Condensed action-routed tools (default — `MCP_TOOL_MODE=condensed`)
+
 | MCP Tool | Toggle Env Var | Description |
 |----------|----------------|-------------|
 | `hub_admin` | `ADMINTOOL` | Client diagnostics: 'rate_limit' returns the latest |
@@ -168,7 +170,71 @@ _Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hoo
 | `hub_scout` | `SCOUTTOOL` | Docker Scout image intelligence (``api.scout.docker.com``): |
 | `hub_teams` | `TEAMSTOOL` | Manage Docker Hub organization groups (teams) and their members. |
 
-_9 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
+#### Verbose 1:1 API-mapped tools (`MCP_TOOL_MODE=verbose` or `both`)
+
+<details>
+<summary>54 per-operation tools — one per public API method (click to expand)</summary>
+
+| MCP Tool | Toggle Env Var | Description |
+|----------|----------------|-------------|
+| `dockerhub_add_group_member` | `GROUPSTOOL` | Add a username to a group. |
+| `dockerhub_assign_repository_group` | `REPOSITORIESTOOL` | Grant a team (group) ``read``/``write``/``admin`` on a repository. |
+| `dockerhub_bulk_invite` | `ORGSTOOL` | Invite many users/emails at once (``POST /v2/invites/bulk``). |
+| `dockerhub_check_repository` | `REPOSITORIESTOOL` | HEAD existence check for a repository. |
+| `dockerhub_check_repository_tag` | `REPOSITORIESTOOL` | HEAD existence check for one tag. |
+| `dockerhub_check_repository_tags` | `REPOSITORIESTOOL` | HEAD check: does the repository have any tags? |
+| `dockerhub_create_access_token` | `ACCESS_TOKENSTOOL` | Create a personal access token. |
+| `dockerhub_create_auth_token` | `AUTHTOOL` | Mint a short-lived JWT bearer from an identifier + secret. |
+| `dockerhub_create_group` | `GROUPSTOOL` | Create a group (team) in an organization. |
+| `dockerhub_create_org_access_token` | `ORG_ACCESS_TOKENSTOOL` | Create an organization access token. |
+| `dockerhub_create_repository` | `REPOSITORIESTOOL` | Create an image repository in a namespace. |
+| `dockerhub_create_scim_user` | `SCIMTOOL` | Provision a SCIM user. |
+| `dockerhub_delete_access_token` | `ACCESS_TOKENSTOOL` | Delete a personal access token. Destructive — gated. |
+| `dockerhub_delete_group` | `GROUPSTOOL` | Delete a group. Destructive — gated. |
+| `dockerhub_delete_invite` | `ORGSTOOL` | Cancel an invite. Destructive — gated. |
+| `dockerhub_delete_org_access_token` | `ORG_ACCESS_TOKENSTOOL` | Delete an organization access token. Destructive — gated. |
+| `dockerhub_export_org_members` | `ORGSTOOL` | Export the member list as CSV (``GET /members/export``). |
+| `dockerhub_get_access_token` | `ACCESS_TOKENSTOOL` | Get one personal access token by UUID. |
+| `dockerhub_get_access_tokens` | `ACCESS_TOKENSTOOL` | List the personal access tokens of the authenticated user. |
+| `dockerhub_get_audit_log_actions` | `AUDIT_LOGSTOOL` | List the audit-log action names available for a namespace. |
+| `dockerhub_get_audit_logs` | `AUDIT_LOGSTOOL` | List audit-log events for a namespace. |
+| `dockerhub_get_group` | `GROUPSTOOL` | Get one group. |
+| `dockerhub_get_group_members` | `GROUPSTOOL` | List a group's members. |
+| `dockerhub_get_groups` | `GROUPSTOOL` | List an organization's groups (teams). |
+| `dockerhub_get_org_access_token` | `ORG_ACCESS_TOKENSTOOL` | Get one organization access token by id. |
+| `dockerhub_get_org_access_tokens` | `ORG_ACCESS_TOKENSTOOL` | List an organization's access tokens. |
+| `dockerhub_get_org_invites` | `ORGSTOOL` | List an organization's pending invites. |
+| `dockerhub_get_org_members` | `ORGSTOOL` | List organization members (filter by search/type/role; paginated). |
+| `dockerhub_get_org_settings` | `ORGSTOOL` | Get an organization's settings (restricted images policy). |
+| `dockerhub_get_repositories` | `REPOSITORIESTOOL` | List a namespace's repositories (name filter + ordering enum). |
+| `dockerhub_get_repository` | `REPOSITORIESTOOL` | Get one repository. |
+| `dockerhub_get_repository_tag` | `REPOSITORIESTOOL` | Get one tag. |
+| `dockerhub_get_repository_tags` | `REPOSITORIESTOOL` | List a repository's tags (paginated). |
+| `dockerhub_get_scim_resource_type` | `SCIMTOOL` | Get one SCIM ResourceType by name. |
+| `dockerhub_get_scim_resource_types` | `SCIMTOOL` | List the SCIM ResourceTypes. |
+| `dockerhub_get_scim_schema` | `SCIMTOOL` | Get one SCIM Schema by id (URN). |
+| `dockerhub_get_scim_schemas` | `SCIMTOOL` | List the SCIM Schemas. |
+| `dockerhub_get_scim_service_provider_config` | `SCIMTOOL` | Get the SCIM ServiceProviderConfig. |
+| `dockerhub_get_scim_user` | `SCIMTOOL` | Get one SCIM user by id. |
+| `dockerhub_get_scim_users` | `SCIMTOOL` | List SCIM users (``startIndex``/``count``/``filter``/``sortBy``/``sortOrder``). |
+| `dockerhub_login` | `AUTHTOOL` | Authenticate via the legacy login endpoint. |
+| `dockerhub_patch_group` | `GROUPSTOOL` | Partially update a group (``PATCH``). |
+| `dockerhub_remove_group_member` | `GROUPSTOOL` | Remove a username from a group. Destructive — gated. |
+| `dockerhub_remove_org_member` | `ORGSTOOL` | Remove a member from the organization. Destructive — gated. |
+| `dockerhub_replace_scim_user` | `SCIMTOOL` | Replace a SCIM user resource (``PUT``). |
+| `dockerhub_resend_invite` | `ORGSTOOL` | Resend an invite (``PATCH /v2/invites/{id}/resend``). |
+| `dockerhub_two_factor_login` | `AUTHTOOL` | Complete a 2FA login with the TOTP code (``POST /v2/users/2fa-login``). |
+| `dockerhub_update_access_token` | `ACCESS_TOKENSTOOL` | Patch a personal access token's label and/or active state. |
+| `dockerhub_update_group` | `GROUPSTOOL` | Replace a group's details (``PUT``). |
+| `dockerhub_update_immutable_tags` | `REPOSITORIESTOOL` | Patch a repository's immutable-tags settings. |
+| `dockerhub_update_org_access_token` | `ORG_ACCESS_TOKENSTOOL` | Patch an organization access token. |
+| `dockerhub_update_org_member` | `ORGSTOOL` | Set a member's org role (``owner``, ``editor``, or ``member``). |
+| `dockerhub_update_org_settings` | `ORGSTOOL` | Replace an organization's settings. Destructive — gated. |
+| `dockerhub_verify_immutable_tags` | `REPOSITORIESTOOL` | Verify immutable-tag rules without applying them. |
+
+</details>
+
+_9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled unless its `<DOMAIN>TOOL` toggle is set false; `MCP_TOOL_MODE` selects the surface (`condensed` default · `verbose` 1:1 · `both`). Auto-generated — do not edit._
 <!-- MCP-TOOLS-TABLE:END -->
 
 #### MCP Configuration Examples
@@ -258,6 +324,7 @@ dockerhub-agent --mcp-url http://localhost:8000/mcp --web
 | `TRANSPORT` | `stdio` | options: stdio, streamable-http, sse |
 | `FASTMCP_LOG_LEVEL` | `ERROR` |  |
 | `NO_COLOR` | `1` |  |
+| `TERM` | `dumb` | forced to "dumb" by the server to disable ANSI/color output |
 | `ENABLE_OTEL` | `True` |  |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:8080/api/public/otel` |  |
 | `OTEL_EXPORTER_OTLP_PUBLIC_KEY` | `pk-...` |  |
@@ -306,7 +373,7 @@ dockerhub-agent --mcp-url http://localhost:8000/mcp --web
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_33 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_34 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 
