@@ -237,22 +237,22 @@ _Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hoo
 _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled unless its `<DOMAIN>TOOL` toggle is set false; `MCP_TOOL_MODE` selects the surface (`condensed` default · `verbose` 1:1 · `both`). Auto-generated — do not edit._
 <!-- MCP-TOOLS-TABLE:END -->
 
-#### MCP Configuration Examples
+### MCP Configuration Examples
 
-> **Install the slim `[mcp]` extra.** All examples below install
-> `dockerhub-api[mcp]` — the MCP-server extra that pulls only the FastMCP /
-> FastAPI tooling (`agent-utilities[mcp]`). It deliberately **excludes** the heavy
-> agent runtime (the epistemic-graph engine, `pydantic-ai`, `dspy`, `llama-index`,
-> `tree-sitter`), so `uvx`/container installs are dramatically smaller and faster.
-> Use the full `[agent]` extra only when you need the integrated Pydantic AI agent
-> (see [Installation](#installation)).
+<!-- MCP-CONFIG-EXAMPLES:START -->
 
-Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
+> **Install the slim `[mcp]` extra.** All examples install `dockerhub-api[mcp]` — the
+> MCP-server extra that pulls only the FastMCP / FastAPI tooling (`agent-utilities[mcp]`).
+> It deliberately **excludes** the heavy agent runtime (`pydantic-ai`, the epistemic-graph
+> engine, `dspy`, `llama-index`), so `uvx` / container installs are far smaller. Use the
+> full `[agent]` extra only when you need the integrated Pydantic AI agent.
+
+#### stdio Transport (local IDEs — Cursor, Claude Desktop, VS Code)
 
 ```json
 {
   "mcpServers": {
-    "dockerhub-api": {
+    "dockerhub-mcp": {
       "command": "uvx",
       "args": [
         "--from",
@@ -260,159 +260,124 @@ Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
         "dockerhub-mcp"
       ],
       "env": {
-        "DOCKER_HUB_USER": "your_dockerhub_user_here",
-        "DOCKER_HUB_TOKEN": "your_dockerhub_token_here"
+        "MCP_TOOL_MODE": "condensed",
+        "ADMINTOOL": "True",
+        "AUDITTOOL": "True",
+        "AUTHTOOL": "True",
+        "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
+        "DOCKERHUB_JWT": "",
+        "DOCKERHUB_TOKEN": "dckr_pat_your_personal_access_token",
+        "DOCKERHUB_URL": "https://hub.docker.com",
+        "DOCKERHUB_USERNAME": "your_dockerhub_username",
+        "DOCKER_HUB_TOKEN": "",
+        "DOCKER_HUB_USER": "",
+        "DOCKER_REGISTRY_AUTH_URL": "https://auth.docker.io/token",
+        "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
+        "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
+        "ORGTOOL": "True",
+        "REGISTRYTOOL": "True",
+        "REPOSTOOL": "True",
+        "SCIMTOOL": "True",
+        "SCOUTTOOL": "True",
+        "TEAMSTOOL": "True"
       }
     }
   }
 }
 ```
 
-#### Registry v2 vs. the Hub management API
+#### Streamable-HTTP Transport (networked / production)
 
-`hub_registry` targets a **different host and auth model** than the other tools.
-The Hub management API (`hub.docker.com`) uses one JWT from `/v2/auth/token`; the
-Registry v2 API (`registry-1.docker.io`) authorizes each call with a
-**per-repository, per-action** bearer obtained from a token service via a
-`401 WWW-Authenticate` challenge. Both reuse the same `DOCKER_HUB_USER` /
-`DOCKER_HUB_TOKEN` credentials (anonymous works for public pulls). Single-segment
-repository names (e.g. `nginx`) are normalized to their official `library/` path.
-
-`_catalog` (registry-wide repository listing) is intentionally **not** implemented:
-Docker Hub does not issue the registry-scoped token it requires. The chunked push
-buffers each chunk in memory — it is intended for manifests, config, and
-attestation blobs, not as a replacement for `docker push` of large layers.
-
-```python
-from dockerhub_api.auth import get_registry_client, get_scout_client
-
-reg = get_registry_client()
-print(reg.inspect("nginx", "latest")["data"]["platforms"])      # multi-arch list
-digest = reg.resolve_digest("nginx", "latest")["data"]["digest"]
-print(reg.list_referrers("nginx", digest)["data"])              # SBOM/attestations
-
-scout = get_scout_client()
-print(scout.get_cves("myorg/app", reference="v1")["data"])      # CVE listing
+```json
+{
+  "mcpServers": {
+    "dockerhub-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "dockerhub-api[mcp]",
+        "dockerhub-mcp",
+        "--transport",
+        "streamable-http",
+        "--port",
+        "8000"
+      ],
+      "env": {
+        "TRANSPORT": "streamable-http",
+        "HOST": "0.0.0.0",
+        "PORT": "8000",
+        "MCP_TOOL_MODE": "condensed",
+        "ADMINTOOL": "True",
+        "AUDITTOOL": "True",
+        "AUTHTOOL": "True",
+        "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
+        "DOCKERHUB_JWT": "",
+        "DOCKERHUB_TOKEN": "dckr_pat_your_personal_access_token",
+        "DOCKERHUB_URL": "https://hub.docker.com",
+        "DOCKERHUB_USERNAME": "your_dockerhub_username",
+        "DOCKER_HUB_TOKEN": "",
+        "DOCKER_HUB_USER": "",
+        "DOCKER_REGISTRY_AUTH_URL": "https://auth.docker.io/token",
+        "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
+        "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
+        "ORGTOOL": "True",
+        "REGISTRYTOOL": "True",
+        "REPOSTOOL": "True",
+        "SCIMTOOL": "True",
+        "SCOUTTOOL": "True",
+        "TEAMSTOOL": "True"
+      }
+    }
+  }
+}
 ```
 
-Run the server:
+Alternatively, connect to a pre-deployed Streamable-HTTP instance by `url`:
+
+```json
+{
+  "mcpServers": {
+    "dockerhub-mcp": {
+      "url": "http://localhost:8000/dockerhub-mcp/mcp"
+    }
+  }
+}
+```
+
+Deploying the Streamable-HTTP server via Docker:
 
 ```bash
-export DOCKER_HUB_USER=youruser
-export DOCKER_HUB_TOKEN=dckr_pat_xxx
-dockerhub-mcp --transport streamable-http --host 0.0.0.0 --port 8000
+docker run -d \
+  --name dockerhub-mcp-mcp \
+  -p 8000:8000 \
+  -e TRANSPORT=streamable-http \
+  -e HOST=0.0.0.0 \
+  -e PORT=8000 \
+  -e MCP_TOOL_MODE=condensed \
+  -e ADMINTOOL=True \
+  -e AUDITTOOL=True \
+  -e AUTHTOOL=True \
+  -e DOCKERHUB_ALLOW_DESTRUCTIVE=False \
+  -e DOCKERHUB_JWT="" \
+  -e DOCKERHUB_TOKEN=dckr_pat_your_personal_access_token \
+  -e DOCKERHUB_URL=https://hub.docker.com \
+  -e DOCKERHUB_USERNAME=your_dockerhub_username \
+  -e DOCKER_HUB_TOKEN="" \
+  -e DOCKER_HUB_USER="" \
+  -e DOCKER_REGISTRY_AUTH_URL=https://auth.docker.io/token \
+  -e DOCKER_REGISTRY_URL=https://registry-1.docker.io \
+  -e DOCKER_SCOUT_URL=https://api.scout.docker.com \
+  -e ORGTOOL=True \
+  -e REGISTRYTOOL=True \
+  -e REPOSTOOL=True \
+  -e SCIMTOOL=True \
+  -e SCOUTTOOL=True \
+  -e TEAMSTOOL=True \
+  knucklessg1/dockerhub-api:mcp
 ```
 
-### Agent (A2A)
-
-```bash
-dockerhub-agent --mcp-url http://localhost:8000/mcp --web
-```
-
----
-
-## Environment Variables
-
-<!-- ENV-VARS-TABLE:START -->
-
-#### Package environment variables
-
-| Variable | Example | Description |
-|----------|---------|-------------|
-| `HOST` | `0.0.0.0` |  |
-| `PORT` | `8000` |  |
-| `TRANSPORT` | `stdio` | options: stdio, streamable-http, sse |
-| `FASTMCP_LOG_LEVEL` | `ERROR` |  |
-| `NO_COLOR` | `1` |  |
-| `TERM` | `dumb` | forced to "dumb" by the server to disable ANSI/color output |
-| `ENABLE_OTEL` | `True` |  |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:8080/api/public/otel` |  |
-| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` | `pk-...` |  |
-| `OTEL_EXPORTER_OTLP_SECRET_KEY` | `sk-...` |  |
-| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` |  |
-| `EUNOMIA_TYPE` | `none` | options: none, embedded, remote |
-| `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
-| `EUNOMIA_REMOTE_URL` | `http://eunomia-server:8000` |  |
-| `DOCKER_HUB_USER` | — | Official hub-tool credential names (primary): |
-| `DOCKER_HUB_TOKEN` | — |  |
-| `DOCKERHUB_URL` | `https://hub.docker.com` | Fallback aliases: DOCKERHUB_USERNAME / DOCKERHUB_TOKEN / DOCKERHUB_JWT |
-| `DOCKERHUB_USERNAME` | `your_dockerhub_username` |  |
-| `DOCKERHUB_TOKEN` | `dckr_pat_your_personal_access_token` | password, PAT, or org access token |
-| `DOCKERHUB_JWT` | — | optional pre-minted bearer (overrides the above) |
-| `DOCKERHUB_SSL_VERIFY` | `True` |  |
-| `DOCKER_REGISTRY_URL` | `https://registry-1.docker.io` |  |
-| `DOCKER_REGISTRY_AUTH_URL` | `https://auth.docker.io/token` | token-service realm; auto-discovered from the 401 challenge |
-| `DOCKER_SCOUT_URL` | `https://api.scout.docker.com` |  |
-| `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` |  |
-| `AUTHTOOL` | `True` |  |
-| `REPOSTOOL` | `True` |  |
-| `ORGTOOL` | `True` |  |
-| `TEAMSTOOL` | `True` |  |
-| `AUDITTOOL` | `True` |  |
-| `SCIMTOOL` | `True` |  |
-| `ADMINTOOL` | `True` |  |
-| `REGISTRYTOOL` | `True` |  |
-| `SCOUTTOOL` | `True` |  |
-
-#### Inherited agent-utilities variables (apply to every connector)
-
-| Variable | Example | Description |
-|----------|---------|-------------|
-| `MCP_TOOL_MODE` | `condensed` | Tool surface: `condensed` | `verbose` | `both` |
-| `MCP_ENABLED_TOOLS` | — | Comma-separated tool allow-list |
-| `MCP_DISABLED_TOOLS` | — | Comma-separated tool deny-list |
-| `MCP_ENABLED_TAGS` | — | Comma-separated tag allow-list |
-| `MCP_DISABLED_TAGS` | — | Comma-separated tag deny-list |
-| `MCP_CLIENT_AUTH` | — | Outbound MCP auth (`oidc-client-credentials` for fleet calls) |
-| `OIDC_CLIENT_ID` | — | OIDC client id (service-account auth) |
-| `OIDC_CLIENT_SECRET` | — | OIDC client secret (service-account auth) |
-| `DEBUG` | `False` | Verbose logging |
-| `PYTHONUNBUFFERED` | `1` | Unbuffered stdout (recommended in containers) |
-| `MCP_URL` | `http://localhost:8000/mcp` | URL of the MCP server the agent connects to |
-| `PROVIDER` | `openai` | LLM provider for the agent |
-| `MODEL_ID` | `gpt-4o` | Model id for the agent |
-| `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
-
-_34 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
-<!-- ENV-VARS-TABLE:END -->
-
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `DOCKERHUB_URL` | `https://hub.docker.com` | Docker Hub API base URL |
-| `DOCKER_HUB_USER` | — | Account identifier (official hub-tool name, primary) |
-| `DOCKER_HUB_TOKEN` | — | Password, PAT `dckr_pat_*`, or org access token (primary) |
-| `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` | — | Legacy fallback aliases for the two above |
-| `DOCKERHUB_JWT` | — | Optional pre-minted bearer (overrides credential exchange) |
-| `DOCKERHUB_SSL_VERIFY` | `True` | TLS certificate verification |
-| `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` | Enable deletes and org-settings writes |
-| `AUTHTOOL` … `ADMINTOOL` | `True` | Per-module MCP tool toggles (see table above) |
-| `HOST` / `PORT` / `TRANSPORT` | `0.0.0.0` / `8000` / `stdio` | MCP server bind & transport (`stdio`, `streamable-http`, `sse`) |
-| `AUTH_TYPE` | `none` | MCP server auth mode (Docker image) |
-| `MCP_URL` | — | MCP endpoint the A2A agent connects to |
-| `ENABLE_OTEL` | `True` | OpenTelemetry / Langfuse export via agent-utilities |
-| `EUNOMIA_TYPE` / `EUNOMIA_POLICY_FILE` / `EUNOMIA_REMOTE_URL` | `none` / `mcp_policies.json` / — | Eunomia access-governance middleware |
-| `FASTMCP_LOG_LEVEL` / `NO_COLOR` | — | FastMCP logging controls |
-
-A complete annotated template lives in [.env.example](.env.example).
-
----
-
-## Deployment
-
-Docker Compose definitions ship in [docker/](docker/):
-
-```bash
-cp .env.example .env       # fill in DOCKER_HUB_USER / DOCKER_HUB_TOKEN
-docker compose -f docker/mcp.compose.yml up -d     # MCP server only
-docker compose -f docker/agent.compose.yml up -d   # MCP server + A2A agent (port 9018)
-```
-
-Both services expose `/health` endpoints; see
-[docs/deployment.md](docs/deployment.md) for transports, Caddy ingress, and
-Technitium DNS guidance.
-
----
+_Auto-generated from the code-read env surface (`MCP_TOOL_MODE` + package vars) — do not edit._
+<!-- MCP-CONFIG-EXAMPLES:END -->
 
 <!-- BEGIN GENERATED: additional-deployment-options -->
 ### Additional Deployment Options
