@@ -1,7 +1,7 @@
 {
   "name": "dockerhub-api-agent",
   "type": "agent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Docker Hub operations agent: repositories and tags, immutable tags, personal/org access tokens, organizations, teams, audit logs, and SCIM provisioning over the Docker Hub API v2.",
   "url": "https://github.com/Knuckles-Team/dockerhub-api/tree/main",
   "license": "MIT",
