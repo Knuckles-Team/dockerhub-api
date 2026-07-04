@@ -1,6 +1,6 @@
 """Docker Hub authentication.
 
-CONCEPT:HUB-1.1 — JWT auth lifecycle.
+CONCEPT:DH-OS.identity.jwt-auth-lifecycle-endpoint — JWT auth lifecycle.
 
 Docker Hub's v2 API authenticates with a short-lived JWT minted from
 ``POST /v2/auth/token`` using an *identifier* (username or organization name)
@@ -188,7 +188,7 @@ class TokenManager:
 class RegistryTokenManager:
     """Mints and caches **per-scope** Registry v2 bearer tokens.
 
-    CONCEPT:HUB-1.7 — Registry v2 scoped-token auth. Unlike the single Hub JWT,
+    CONCEPT:DH-OS.identity.registry-v2-scoped-token — Registry v2 scoped-token auth. Unlike the single Hub JWT,
     each registry token is scoped to one repository and action set
     (``repository:library/nginx:pull``). Tokens are obtained from a token
     service (default ``auth.docker.io``) with optional HTTP Basic credentials;
@@ -307,7 +307,7 @@ def get_client(
     3. Anonymous — public, unauthenticated endpoints only.
 
     ``DOCKERHUB_ALLOW_DESTRUCTIVE`` (default ``False``) gates deletes and
-    org-settings writes. CONCEPT:HUB-1.3 — destructive-action gating.
+    org-settings writes. CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating.
     """
     from dockerhub_api.api_client import Api
 
@@ -400,7 +400,7 @@ def get_registry_client(
 ) -> Any:
     """Factory for the :class:`~dockerhub_api.api.api_client_registry.RegistryApi`.
 
-    CONCEPT:HUB-1.7 — Registry v2 client. Authenticates with per-repository
+    CONCEPT:DH-OS.identity.registry-v2-scoped-token — Registry v2 client. Authenticates with per-repository
     scoped tokens via :class:`RegistryTokenManager` using the same
     ``DOCKER_HUB_USER`` / ``DOCKER_HUB_TOKEN`` credentials (anonymous when
     unset, which still works for public pulls). Pushes, deletes, and blob
@@ -459,7 +459,7 @@ def get_scout_client(
 ) -> Any:
     """Factory for the :class:`~dockerhub_api.api.api_client_scout.ScoutApi`.
 
-    CONCEPT:HUB-1.11 — Docker Scout client. Reuses the Hub JWT (same
+    CONCEPT:DH-OS.identity.docker-scout-client-cve — Docker Scout client. Reuses the Hub JWT (same
     ``/v2/auth/token`` exchange) but targets ``api.scout.docker.com`` for CVE,
     SBOM, and policy data.
     """

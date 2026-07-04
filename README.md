@@ -407,7 +407,7 @@ consumed from a **remote deployment**. The
 
 ## Concepts
 
-The concept registry (`CONCEPT:HUB-1.x`) is documented in
+The concept registry (`CONCEPT:DH-OS.governance.hub-x`) is documented in
 [docs/concepts.md](docs/concepts.md).
 
 ## License

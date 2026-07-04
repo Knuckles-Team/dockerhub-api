@@ -1,6 +1,6 @@
 """Docker Hub authentication endpoints.
 
-CONCEPT:HUB-1.1 — JWT auth lifecycle (endpoint wrappers).
+CONCEPT:DH-OS.identity.jwt-auth-lifecycle-endpoint — JWT auth lifecycle (endpoint wrappers).
 """
 
 import warnings

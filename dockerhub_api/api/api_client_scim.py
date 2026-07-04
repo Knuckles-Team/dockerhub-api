@@ -1,6 +1,6 @@
 """SCIM 2.0 endpoints (``/v2/scim/2.0``).
 
-CONCEPT:HUB-1.5 — SCIM provisioning. All requests/responses use the
+CONCEPT:DH-OS.governance.scim-provisioning-all-requests — SCIM provisioning. All requests/responses use the
 ``application/scim+json`` media type and SCIM-style 1-based pagination
 (``startIndex``/``count``).
 """

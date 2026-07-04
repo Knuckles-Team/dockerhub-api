@@ -1,10 +1,10 @@
 """Registry HTTP API v2 endpoints (``registry-1.docker.io``).
 
-CONCEPT:HUB-1.7 — Registry v2 client. Image-level operations the Hub
+CONCEPT:DH-OS.identity.registry-v2-scoped-token — Registry v2 client. Image-level operations the Hub
 management API does not cover: tag listing, manifest/blob inspection,
 multi-arch platform resolution, digest resolution, and (gated) deletes.
-CONCEPT:HUB-1.9 — OCI Referrers / attestation discovery.
-CONCEPT:HUB-1.10 — chunked blob push (upload session + manifest put).
+CONCEPT:DH-OS.governance.oci-referrers-attestation-discovery — OCI Referrers / attestation discovery.
+CONCEPT:DH-OS.governance.chunked-blob-push-upload — chunked blob push (upload session + manifest put).
 
 Pushes, deletes, and blob uploads are destructive and gated by
 ``allow_destructive`` (``DOCKERHUB_ALLOW_DESTRUCTIVE``). ``_catalog`` is

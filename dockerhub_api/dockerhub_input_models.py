@@ -1,6 +1,6 @@
 """Pydantic input models for the Docker Hub API client.
 
-CONCEPT:HUB-1.0 — core wrapper.
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper.
 
 Each model validates the caller-supplied arguments for one endpoint family
 and builds the query parameters (``api_parameters``) and/or request body

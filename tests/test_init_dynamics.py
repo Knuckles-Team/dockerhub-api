@@ -1,4 +1,4 @@
-"""Package import + dynamic ``__all__`` exposure (CONCEPT:HUB-1.0)."""
+"""Package import + dynamic ``__all__`` exposure (CONCEPT:DH-OS.audit.core-wrapper-api-is)."""
 
 import importlib
 

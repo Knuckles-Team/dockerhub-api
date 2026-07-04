@@ -1,7 +1,7 @@
 """MCP tool for Docker Hub SCIM 2.0 provisioning.
 
-CONCEPT:HUB-1.4 — action-routed MCP surface.
-CONCEPT:HUB-1.5 — SCIM provisioning.
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface.
+CONCEPT:DH-OS.governance.scim-provisioning-all-requests — SCIM provisioning.
 """
 
 from typing import Any

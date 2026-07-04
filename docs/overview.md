@@ -82,9 +82,9 @@ This project implements or inherits the following ecosystem concepts:
 | Concept ID | Description | Source |
 |:-----------|:------------|:-------|
 | ECO-4.1 | MCP & Universal Skills | `agent-utilities` (inherited) |
-| ECO-4.2 | A2A Network & Consensus | `agent-utilities` (inherited) |
-| CONCEPT:HUB-1.1 | JWT auth lifecycle (`TokenManager`) | [`concepts.md`](concepts.md) |
-| CONCEPT:HUB-1.3 | Destructive-action gating | [`concepts.md`](concepts.md) |
-| CONCEPT:HUB-1.4 | Action-routed MCP surface | [`concepts.md`](concepts.md) |
+| AU-ECO.toolkit.journey-map-narrative | A2A Network & Consensus | `agent-utilities` (inherited) |
+| CONCEPT:DH-OS.identity.jwt-auth-lifecycle-endpoint | JWT auth lifecycle (`TokenManager`) | [`concepts.md`](concepts.md) |
+| CONCEPT:DH-OS.identity.destructive-action-gating-member | Destructive-action gating | [`concepts.md`](concepts.md) |
+| CONCEPT:DH-OS.audit.action-routed-mcp-surface | Action-routed MCP surface | [`concepts.md`](concepts.md) |
 
 > 📖 **Full Registry**: See [`agent-utilities/docs/overview.md`](https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/overview.md) for the complete 5-Pillar concept index.

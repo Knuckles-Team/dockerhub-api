@@ -1,15 +1,15 @@
 """Base HTTP plumbing for the Docker Hub API client.
 
-CONCEPT:HUB-1.0 — core wrapper. Raw ``httpx`` client against
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper. Raw ``httpx`` client against
 ``https://hub.docker.com`` with a uniform response envelope.
 
-CONCEPT:HUB-1.2 — rate-limit telemetry. Every response's
+CONCEPT:DH-OS.governance.rate-limit-telemetry-every — rate-limit telemetry. Every response's
 ``X-RateLimit-Limit`` / ``X-RateLimit-Remaining`` / ``X-RateLimit-Reset``
 headers are captured into the result envelope (and kept on the client as
 ``rate_limit``), and HTTP 429 responses are retried with a bounded
 ``Retry-After`` backoff.
 
-CONCEPT:HUB-1.3 — destructive-action gating. Deletes and org-settings writes
+CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating. Deletes and org-settings writes
 raise :class:`DestructiveOperationError` unless the client was built with
 ``allow_destructive=True``.
 """

@@ -1,10 +1,10 @@
 """MCP tool for the Registry HTTP API v2.
 
-CONCEPT:HUB-1.4 — action-routed MCP surface.
-CONCEPT:HUB-1.7 — Registry v2 client.
-CONCEPT:HUB-1.8 — Registry v2 MCP tool (``hub_registry``).
-CONCEPT:HUB-1.9 — OCI Referrers / attestation discovery.
-CONCEPT:HUB-1.10 — chunked blob push.
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface.
+CONCEPT:DH-OS.identity.registry-v2-scoped-token — Registry v2 client.
+CONCEPT:DH-OS.governance.registry-v2-mcp-tool — Registry v2 MCP tool (``hub_registry``).
+CONCEPT:DH-OS.governance.oci-referrers-attestation-discovery — OCI Referrers / attestation discovery.
+CONCEPT:DH-OS.governance.chunked-blob-push-upload — chunked blob push.
 """
 
 from typing import Any

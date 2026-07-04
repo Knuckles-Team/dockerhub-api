@@ -1,5 +1,5 @@
 """Api facade request/response behavior over the mocked transport
-(CONCEPT:HUB-1.0): uniform envelope, bearer auth header, query params,
+(CONCEPT:DH-OS.audit.core-wrapper-api-is): uniform envelope, bearer auth header, query params,
 and destructive gating at the facade level."""
 
 import pytest

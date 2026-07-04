@@ -1,6 +1,6 @@
 """MCP tool for Docker Hub organization members, settings, and invites.
 
-CONCEPT:HUB-1.4 — action-routed MCP surface.
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface.
 """
 
 from typing import Any

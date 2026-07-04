@@ -1,6 +1,6 @@
 """Personal access token endpoints (``/v2/access-tokens``).
 
-CONCEPT:HUB-1.1 — JWT auth lifecycle (PAT management).
+CONCEPT:DH-OS.identity.jwt-auth-lifecycle-endpoint — JWT auth lifecycle (PAT management).
 """
 
 from typing import Any

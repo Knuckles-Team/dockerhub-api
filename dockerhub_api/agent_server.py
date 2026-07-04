@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """Docker Hub A2A agent server.
 
-CONCEPT:HUB-1.6 — A2A agent server. A Pydantic-AI graph agent over the
+CONCEPT:DH-OS.governance.a2a-agent-server-pydantic — A2A agent server. A Pydantic-AI graph agent over the
 Docker Hub MCP tool surface, exposed via agent-utilities'
 ``create_agent_server`` (A2A + AG-UI web interface).
 """

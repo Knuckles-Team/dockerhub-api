@@ -1,6 +1,6 @@
 """Pydantic response models for the Docker Hub API client.
 
-CONCEPT:HUB-1.0 — core wrapper.
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper.
 
 Models are intentionally lenient (``extra="allow"``, optional fields) so they
 survive Docker Hub schema evolution: known fields get typed, unknown fields

@@ -1,7 +1,7 @@
 """MCP tool for Docker Hub client telemetry and identity introspection.
 
-CONCEPT:HUB-1.4 — action-routed MCP surface.
-CONCEPT:HUB-1.2 — rate-limit telemetry.
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface.
+CONCEPT:DH-OS.governance.rate-limit-telemetry-every — rate-limit telemetry.
 """
 
 from typing import Any

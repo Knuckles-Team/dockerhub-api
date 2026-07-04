@@ -1,6 +1,6 @@
 """MCP tool registration modules for dockerhub-api.
 
-CONCEPT:HUB-1.4 — action-routed MCP surface. Each module registers one
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface. Each module registers one
 consolidated, action-routed tool; this package provides the shared client
 resolution, parameter parsing, secret redaction, and error-envelope helpers.
 """

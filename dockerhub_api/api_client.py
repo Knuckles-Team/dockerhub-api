@@ -1,6 +1,6 @@
 """The composed Docker Hub API client.
 
-CONCEPT:HUB-1.0 — core wrapper. ``Api`` is assembled from per-domain mixins,
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper. ``Api`` is assembled from per-domain mixins,
 all sharing the transport/auth/rate-limit plumbing in
 :class:`~dockerhub_api.api.api_client_base.DockerHubApiBase`.
 """

@@ -1,6 +1,6 @@
 """Audit log endpoints (``/v2/auditlogs``).
 
-CONCEPT:HUB-1.0 — core wrapper.
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper.
 """
 
 from typing import Any

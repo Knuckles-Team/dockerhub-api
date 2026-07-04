@@ -1,6 +1,6 @@
 """Organization access token (OAT) endpoints (``/v2/orgs/{org}/access-tokens``).
 
-CONCEPT:HUB-1.1 — JWT auth lifecycle (OAT management).
+CONCEPT:DH-OS.identity.jwt-auth-lifecycle-endpoint — JWT auth lifecycle (OAT management).
 """
 
 from typing import Any

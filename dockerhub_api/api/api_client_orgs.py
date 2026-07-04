@@ -1,7 +1,7 @@
 """Organization endpoints: settings, members, and invites.
 
-CONCEPT:HUB-1.0 — core wrapper.
-CONCEPT:HUB-1.3 — destructive-action gating (member removal, invite deletion,
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper.
+CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating (member removal, invite deletion,
 org-settings writes).
 """
 

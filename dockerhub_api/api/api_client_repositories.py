@@ -1,6 +1,6 @@
 """Repository and tag endpoints (``/v2/namespaces/{ns}/repositories``).
 
-CONCEPT:HUB-1.0 — core wrapper. Repository creation is the primary
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper. Repository creation is the primary
 provisioning use case (creating image repos for releases) and is therefore
 *not* destructive-gated.
 """

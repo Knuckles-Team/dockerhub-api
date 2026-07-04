@@ -1,7 +1,7 @@
 """MCP tool for Docker Scout (CVE / SBOM / policy intelligence).
 
-CONCEPT:HUB-1.4 — action-routed MCP surface.
-CONCEPT:HUB-1.11 — Docker Scout client.
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface.
+CONCEPT:DH-OS.identity.docker-scout-client-cve — Docker Scout client.
 """
 
 from typing import Any

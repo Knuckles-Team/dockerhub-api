@@ -84,7 +84,7 @@ dockerhub-agent    # dockerhub_api.agent_server:agent_server
 **Do:**
 - Run `pre-commit` before pushing changes.
 - Keep tools focused and idempotent where possible.
-- Use the `CONCEPT:HUB-1.x` markers when adding capabilities (registry in `docs/concepts.md`).
+- Use the `CONCEPT:DH-OS.governance.hub-x` markers when adding capabilities (registry in `docs/concepts.md`).
 
 **Don't:**
 - Use `cd` commands in scripts; use absolute paths or paths relative to project root.
@@ -178,7 +178,7 @@ only when the user asks, (4) remove the worktree and delete the merged branch.
 Working in parallel with other sessions/worktrees? **Reserve a concept id before you write its `CONCEPT:` marker** so two sessions never collide:
 
 ```bash
-agent-utilities --json concept reserve --ns KG-2   # or a package prefix, e.g. KEY
+agent-utilities --json concept reserve --ns EG-KG.compute.backend   # or a package prefix, e.g. KEY
 ```
 
 Full protocol (ledger, merge=union, reconcile, MCP/REST): <https://knuckles-team.github.io/agent-utilities/concept_coordination/>

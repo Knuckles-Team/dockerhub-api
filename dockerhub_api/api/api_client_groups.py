@@ -1,7 +1,7 @@
 """Group (team) endpoints (``/v2/orgs/{org}/groups``).
 
-CONCEPT:HUB-1.0 — core wrapper.
-CONCEPT:HUB-1.3 — destructive-action gating (group/member deletion).
+CONCEPT:DH-OS.audit.core-wrapper-api-is — core wrapper.
+CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating (group/member deletion).
 """
 
 from typing import Any

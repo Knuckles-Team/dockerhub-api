@@ -1,6 +1,6 @@
 """Docker Scout API endpoints (``api.scout.docker.com``).
 
-CONCEPT:HUB-1.11 — Docker Scout client. CVE / vulnerability, SBOM, and policy
+CONCEPT:DH-OS.identity.docker-scout-client-cve — Docker Scout client. CVE / vulnerability, SBOM, and policy
 data for images, authenticated with the same Hub JWT minted from
 ``/v2/auth/token``.
 

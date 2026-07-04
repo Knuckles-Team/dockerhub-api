@@ -1,6 +1,6 @@
 """Base HTTP plumbing for the Registry HTTP API v2 client.
 
-CONCEPT:HUB-1.7 — Registry v2 client + scoped-token auth. The registry
+CONCEPT:DH-OS.identity.registry-v2-scoped-token — Registry v2 client + scoped-token auth. The registry
 (``registry-1.docker.io``) is a *different* API and auth model than the
 ``hub.docker.com`` management API: every request is authorized by a
 per-repository, per-action bearer obtained from a token service via a
