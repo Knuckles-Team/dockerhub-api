@@ -21,6 +21,7 @@
         "DOCKER_REGISTRY_AUTH_URL": "https://auth.docker.io/token",
         "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
         "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
+        "KGTOOL": "True",
         "ORGTOOL": "True",
         "REGISTRYTOOL": "True",
         "REPOSTOOL": "True",

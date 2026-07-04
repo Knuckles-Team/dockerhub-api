@@ -163,6 +163,7 @@ _Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hoo
 | `hub_admin` | `ADMINTOOL` | Client diagnostics: 'rate_limit' returns the latest |
 | `hub_audit` | `AUDITTOOL` | Read a Docker Hub account's audit trail: 'logs' lists events |
 | `hub_auth` | `AUTHTOOL` | Manage Docker Hub authentication, personal access tokens (PATs), |
+| `dockerhub_ingest_repositories` | `KGTOOL` | Natively ingest repositories into the epistemic-graph as typed :Repository/:ContainerImage nodes. |
 | `hub_org` | `ORGTOOL` | Manage a Docker Hub organization: settings (restricted images), |
 | `hub_registry` | `REGISTRYTOOL` | Docker Registry v2 image operations (``registry-1.docker.io``): |
 | `hub_repos` | `REPOSTOOL` | Manage Docker Hub repositories: list/create/inspect repositories, |
@@ -274,6 +275,7 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
         "DOCKER_REGISTRY_AUTH_URL": "https://auth.docker.io/token",
         "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
         "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
+        "KGTOOL": "True",
         "ORGTOOL": "True",
         "REGISTRYTOOL": "True",
         "REPOSTOOL": "True",
@@ -320,6 +322,7 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
         "DOCKER_REGISTRY_AUTH_URL": "https://auth.docker.io/token",
         "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
         "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
+        "KGTOOL": "True",
         "ORGTOOL": "True",
         "REGISTRYTOOL": "True",
         "REPOSTOOL": "True",
@@ -367,6 +370,7 @@ docker run -d \
   -e DOCKER_REGISTRY_AUTH_URL=https://auth.docker.io/token \
   -e DOCKER_REGISTRY_URL=https://registry-1.docker.io \
   -e DOCKER_SCOUT_URL=https://api.scout.docker.com \
+  -e KGTOOL=True \
   -e ORGTOOL=True \
   -e REGISTRYTOOL=True \
   -e REPOSTOOL=True \

@@ -110,6 +110,7 @@ def run_action(handlers: dict, action: str, kwargs: dict[str, Any]) -> Any:
 from dockerhub_api.mcp.mcp_admin import register_admin_tools
 from dockerhub_api.mcp.mcp_audit import register_audit_tools
 from dockerhub_api.mcp.mcp_auth import register_auth_tools
+from dockerhub_api.mcp.mcp_kg import register_kg_tools
 from dockerhub_api.mcp.mcp_org import register_org_tools
 from dockerhub_api.mcp.mcp_registry import register_registry_tools
 from dockerhub_api.mcp.mcp_repos import register_repos_tools
@@ -130,6 +131,7 @@ __all__ = [
     "register_admin_tools",
     "register_audit_tools",
     "register_auth_tools",
+    "register_kg_tools",
     "register_org_tools",
     "register_registry_tools",
     "register_repos_tools",

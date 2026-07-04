@@ -1,0 +1,142 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix : <http://knuckles.team/kg#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Docker Hub container-registry ontology — namespaces, image repositories, tags and the
+# concrete container images they resolve to, plus teams and access tokens. All classes and
+# properties live in the shared `:` (kg#) namespace; only the owl:Ontology node gets the
+# per-package IRI. Backs the dockerhub-api MCP tool surface (hub_repos / hub_org / hub_teams
+# / hub_registry / hub_scout) and its native ingestion (dockerhub:repository / :image / …).
+
+:Namespace a owl:Class ;
+    rdfs:label "Docker Hub Namespace" ;
+    rdfs:comment "A Docker Hub account/organization namespace that owns image repositories (the {namespace} in namespaces/{ns}/repositories)." .
+
+:Organization a owl:Class ;
+    rdfs:subClassOf :Namespace ;
+    rdfs:label "Docker Hub Organization" ;
+    rdfs:comment "An organization namespace with members, teams, settings, and invites (hub_org)." .
+
+:Repository a owl:Class ;
+    rdfs:label "Container Repository" ;
+    rdfs:comment "A Docker Hub image repository holding tags and container images (hub_repos list/get)." .
+
+:ContainerImage a owl:Class ;
+    rdfs:label "Container Image" ;
+    rdfs:comment "A concrete, content-addressable OCI/Docker image (a repository tag resolving to a digest, size, and platform) — hub_repos list_tags / get_tag and hub_registry manifests." .
+
+:Team a owl:Class ;
+    rdfs:label "Team" ;
+    rdfs:comment "An organization group (team) granted repository permissions (hub_teams / hub_repos assign_group)." .
+
+:AccessToken a owl:Class ;
+    rdfs:label "Access Token" ;
+    rdfs:comment "A personal or organization access token (PAT / OAT) scoped for registry and API access (hub_auth / hub_org tokens). Secret material is never ingested." .
+
+:Vulnerability a owl:Class ;
+    rdfs:label "Vulnerability" ;
+    rdfs:comment "A CVE / security finding reported against a container image by Docker Scout (hub_scout)." .
+
+# --- links (owl:ObjectProperty) ---
+
+:inNamespace a owl:ObjectProperty ;
+    rdfs:label "in namespace" ;
+    rdfs:comment "Links a Repository to the Namespace/Organization that owns it." ;
+    rdfs:domain :Repository ;
+    rdfs:range :Namespace .
+
+:hasImage a owl:ObjectProperty ;
+    rdfs:label "has image" ;
+    rdfs:comment "Links a Repository to a ContainerImage (tag) it holds." ;
+    rdfs:domain :Repository ;
+    rdfs:range :ContainerImage .
+
+:imageOf a owl:ObjectProperty ;
+    rdfs:label "image of" ;
+    rdfs:comment "Links a ContainerImage back to the Repository it belongs to." ;
+    rdfs:domain :ContainerImage ;
+    rdfs:range :Repository .
+
+:grantsAccessTo a owl:ObjectProperty ;
+    rdfs:label "grants access to" ;
+    rdfs:comment "Links a Team to a Repository it holds a permission on." ;
+    rdfs:domain :Team ;
+    rdfs:range :Repository .
+
+:memberOf a owl:ObjectProperty ;
+    rdfs:label "member of" ;
+    rdfs:comment "Links a Person to the Organization or Team they belong to." ;
+    rdfs:domain :Person ;
+    rdfs:range :Namespace .
+
+:hasVulnerability a owl:ObjectProperty ;
+    rdfs:label "has vulnerability" ;
+    rdfs:comment "Links a ContainerImage to a Vulnerability found by Docker Scout." ;
+    rdfs:domain :ContainerImage ;
+    rdfs:range :Vulnerability .
+
+# --- fields (owl:DatatypeProperty) ---
+
+:isPrivate a owl:DatatypeProperty ;
+    rdfs:label "is private" ;
+    rdfs:comment "Whether a Repository is private (not publicly pullable)." ;
+    rdfs:domain :Repository ;
+    rdfs:range xsd:boolean .
+
+:pullCount a owl:DatatypeProperty ;
+    rdfs:label "pull count" ;
+    rdfs:comment "Total pulls recorded for a Repository." ;
+    rdfs:domain :Repository ;
+    rdfs:range xsd:integer .
+
+:starCount a owl:DatatypeProperty ;
+    rdfs:label "star count" ;
+    rdfs:comment "Total stars recorded for a Repository." ;
+    rdfs:domain :Repository ;
+    rdfs:range xsd:integer .
+
+:digest a owl:DatatypeProperty ;
+    rdfs:label "digest" ;
+    rdfs:comment "Content-addressable OCI digest (sha256:...) of a ContainerImage." ;
+    rdfs:domain :ContainerImage ;
+    rdfs:range xsd:string .
+
+:architecture a owl:DatatypeProperty ;
+    rdfs:label "architecture" ;
+    rdfs:comment "CPU architecture of a ContainerImage (amd64, arm64, …)." ;
+    rdfs:domain :ContainerImage ;
+    rdfs:range xsd:string .
+
+:imageSize a owl:DatatypeProperty ;
+    rdfs:label "image size" ;
+    rdfs:comment "Full compressed size in bytes of a ContainerImage." ;
+    rdfs:domain :ContainerImage ;
+    rdfs:range xsd:integer .
+
+:lastPushed a owl:DatatypeProperty ;
+    rdfs:label "last pushed" ;
+    rdfs:comment "Timestamp a ContainerImage/tag was last pushed." ;
+    rdfs:range xsd:string .
+
+:scopes a owl:DatatypeProperty ;
+    rdfs:label "scopes" ;
+    rdfs:comment "Granted scopes of an AccessToken (e.g. repo:read, repo:write)." ;
+    rdfs:domain :AccessToken ;
+    rdfs:range xsd:string .
+
+:permission a owl:DatatypeProperty ;
+    rdfs:label "permission" ;
+    rdfs:comment "Access level a Team holds on a Repository (read, write, admin)." ;
+    rdfs:range xsd:string .
+
+<http://knuckles.team/kg/dockerhub> a owl:Ontology ;
+    rdfs:label "Docker Hub Container Registry Ontology" ;
+    rdfs:comment """Docker Hub container-registry model — namespaces and organizations,
+    image repositories, tags and the concrete container images they resolve to (digest,
+    architecture, size), teams and their repository permissions, access tokens, and Docker
+    Scout vulnerabilities — federated into the agent-utilities knowledge-graph hub.""" ;
+    owl:imports <http://knuckles.team/kg> .

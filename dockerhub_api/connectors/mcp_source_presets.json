@@ -1,0 +1,18 @@
+{
+  "_comment": "Tier-1 mcp_tool source presets for dockerhub-api (AU-KG.ingest.mcp-tool-connector). Syncs Docker Hub repositories into the KG as repository documents via the dockerhub-api MCP server hub_repos tool. Contributed presets win over the central MCP_TOOL_PRESETS. The native dockerhub_ingest_repositories tool + kg_ingest.py provide the typed :Repository/:ContainerImage graph nodes.",
+  "dockerhub-repositories": {
+    "server": "dockerhub-api",
+    "tool": "hub_repos",
+    "action": "list",
+    "records_path": "data.results",
+    "id_field": "name",
+    "title_field": "name",
+    "text_field": "description",
+    "updated_field": "last_updated",
+    "pagination": "page",
+    "page_kind": "page",
+    "page_param": "page",
+    "page_size_param": "page_size",
+    "doc_type": "repository"
+  }
+}

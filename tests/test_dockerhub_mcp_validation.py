@@ -21,6 +21,7 @@ EXPECTED_TOOLS = {
     "hub_admin",
     "hub_registry",
     "hub_scout",
+    "dockerhub_ingest_repositories",
 }
 
 

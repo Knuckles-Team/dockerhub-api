@@ -33,6 +33,7 @@ from dockerhub_api.mcp import (
     register_admin_tools,  # noqa: F401
     register_audit_tools,  # noqa: F401
     register_auth_tools,  # noqa: F401
+    register_kg_tools,  # noqa: F401
     register_org_tools,  # noqa: F401
     register_registry_tools,  # noqa: F401
     register_repos_tools,  # noqa: F401
