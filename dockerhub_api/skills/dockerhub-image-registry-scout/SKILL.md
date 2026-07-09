@@ -1,5 +1,6 @@
 ---
 name: dockerhub-image-registry-scout
+skill_type: skill
 description: >-
   Inspect container images at the OCI registry level and analyze their security
   posture via the dockerhub-api MCP server — resolve manifests/digests, list

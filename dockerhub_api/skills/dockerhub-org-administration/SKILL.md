@@ -1,5 +1,6 @@
 ---
 name: dockerhub-org-administration
+skill_type: skill
 description: >-
   Administer a Docker Hub organization via the dockerhub-api MCP server — manage
   org settings and restricted-images policy, members and invites (`hub_org`),

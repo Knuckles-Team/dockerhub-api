@@ -1,5 +1,6 @@
 ---
 name: dockerhub-repository-management
+skill_type: skill
 description: >-
   Manage Docker Hub image repositories and tags via the dockerhub-api MCP server
   — list/create/inspect repositories, browse tags, configure immutable-tag rules,
