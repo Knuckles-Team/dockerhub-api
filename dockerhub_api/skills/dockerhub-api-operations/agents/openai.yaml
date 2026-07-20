@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dockerhub API Operations"
+  short_description: "Help with Dockerhub API Operations tasks"
+  default_prompt: "Use $dockerhub-api-operations to complete a governed provider workflow."

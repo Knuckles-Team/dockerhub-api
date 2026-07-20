@@ -26,9 +26,9 @@ pip install -e .[all]
 ## Docker image
 
 ```bash
-docker pull knucklessg1/dockerhub-api:latest
+docker pull example/dockerhub-api@sha256:<digest>
 docker run --rm -e DOCKERHUB_USERNAME=youruser -e DOCKERHUB_TOKEN=dckr_pat_xxx \
-  -e TRANSPORT=streamable-http -p 8000:8000 knucklessg1/dockerhub-api:latest
+  -e TRANSPORT=streamable-http -p 8000:8000 example/dockerhub-api@sha256:<digest>
 ```
 
 ## Configuration
@@ -41,7 +41,7 @@ Copy `.env.example` to `.env` and fill in your values:
 | `DOCKERHUB_USERNAME` | — | Identifier (username or org) for token exchange |
 | `DOCKERHUB_TOKEN` | — | Secret: password, PAT `dckr_pat_*`, or org access token |
 | `DOCKERHUB_JWT` | — | Optional pre-minted bearer (skips the exchange) |
-| `DOCKERHUB_SSL_VERIFY` | `True` | TLS verification |
+| `DOCKERHUB_TLS_PROFILE` | `system` | TLS verification |
 | `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` | Enable deletes and org-settings writes |
 | `AUTHTOOL` … `ADMINTOOL` | `True` | Per-module MCP tool toggles |
 

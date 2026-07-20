@@ -1,0 +1,20 @@
+schema_version: '1'
+connector: dockerhub-api
+ontology_source: dockerhub
+sync:
+- preset: dockerhub-repositories
+  server: dockerhub-api
+  tool: hub_repos
+  action: list
+  records_path: data.results
+  id_field: name
+  title_field: name
+  text_field: description
+  updated_field: last_updated
+  doc_type: repository
+  tool_schema_sha256: a8e6df33d3141f5abc1ef47ff4e69267df353bc6d0b9c958fd2d04de12e96b17
+governance:
+  default_acl: quarantine
+  identity: opaque-reference
+  tenant: required-at-materialization
+  provenance: required-at-materialization

@@ -44,7 +44,7 @@ def register_kg_tools(mcp: FastMCP):
         try:
             kwargs = parse_params(params_json)
         except Exception as e:
-            return {"error": f"Invalid params_json: {e}"}
+            return {"error": "Operation failed"}
 
         namespace = kwargs.get("namespace")
         if not namespace:

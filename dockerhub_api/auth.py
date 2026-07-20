@@ -27,6 +27,10 @@ import httpx
 from agent_utilities.base_utilities import get_logger
 from agent_utilities.core.config import setting
 from agent_utilities.core.exceptions import AuthError
+from agent_utilities.core.transport_security import (
+    ResolvedTLSProfile,
+    resolve_configured_tls_profile,
+)
 
 logger = get_logger(__name__)
 
@@ -103,7 +107,7 @@ class TokenManager:
         identifier: str,
         secret: str,
         url: str = DEFAULT_DOCKERHUB_URL,
-        verify: bool = True,
+        tls_profile: ResolvedTLSProfile | None = None,
         timeout: float = 30.0,
         refresh_skew: float = DEFAULT_REFRESH_SKEW,
         transport: httpx.BaseTransport | None = None,
@@ -113,7 +117,7 @@ class TokenManager:
         self.identifier = identifier
         self._secret = secret
         self.url = url.rstrip("/")
-        self.verify = verify
+        self.tls_profile = tls_profile or resolve_configured_tls_profile("dockerhub")
         self.timeout = timeout
         self.refresh_skew = refresh_skew
         self._transport = transport
@@ -148,9 +152,9 @@ class TokenManager:
     def _fetch(self) -> str:
         response = httpx.Client(
             base_url=self.url,
-            verify=self.verify,
             timeout=self.timeout,
             transport=self._transport,
+            **self.tls_profile.httpx_kwargs(),
         ).post(
             AUTH_ENDPOINT,
             json={"identifier": self.identifier, "secret": self._secret},
@@ -202,7 +206,7 @@ class RegistryTokenManager:
         secret: str | None = None,
         realm: str = DEFAULT_REGISTRY_AUTH_REALM,
         service: str = DEFAULT_REGISTRY_SERVICE,
-        verify: bool = True,
+        tls_profile: ResolvedTLSProfile | None = None,
         timeout: float = 30.0,
         refresh_skew: float = DEFAULT_REFRESH_SKEW,
         transport: httpx.BaseTransport | None = None,
@@ -211,7 +215,7 @@ class RegistryTokenManager:
         self._secret = secret
         self.realm = realm
         self.service = service
-        self.verify = verify
+        self.tls_profile = tls_profile or resolve_configured_tls_profile("dockerhub")
         self.timeout = timeout
         self.refresh_skew = refresh_skew
         self._transport = transport
@@ -240,9 +244,9 @@ class RegistryTokenManager:
             params["scope"] = scope
         auth = (self.username, self._secret) if self.username and self._secret else None
         response = httpx.Client(
-            verify=self.verify,
             timeout=self.timeout,
             transport=self._transport,
+            **self.tls_profile.httpx_kwargs(),
         ).get(realm, params=params, auth=auth)
         if response.status_code in (401, 403):
             raise AuthError(
@@ -267,19 +271,27 @@ def get_token_manager(
     identifier: str,
     secret: str,
     url: str = DEFAULT_DOCKERHUB_URL,
-    verify: bool = True,
+    tls_profile: ResolvedTLSProfile | None = None,
 ) -> TokenManager:
     """Return a shared, process-wide :class:`TokenManager` for the credentials.
 
     Sharing the manager lets every short-lived client (one per MCP tool call)
     reuse the same cached JWT instead of re-minting on every request.
     """
-    key = (url.rstrip("/"), identifier, verify)
+    profile = tls_profile or resolve_configured_tls_profile("dockerhub")
+    key = (url.rstrip("/"), identifier)
     with _token_manager_lock:
         manager = _token_managers.get(key)
-        if manager is None or manager._secret != secret:
+        if (
+            manager is None
+            or manager._secret != secret
+            or manager.tls_profile != profile
+        ):
             manager = TokenManager(
-                identifier=identifier, secret=secret, url=url, verify=verify
+                identifier=identifier,
+                secret=secret,
+                url=url,
+                tls_profile=profile,
             )
             _token_managers[key] = manager
         return manager
@@ -290,7 +302,7 @@ def get_client(
     username: str | None = None,
     token: str | None = None,
     jwt: str | None = None,
-    verify: bool | None = None,
+    tls_profile: ResolvedTLSProfile | None = None,
     allow_destructive: bool | None = None,
     config: dict | None = None,
 ) -> Any:
@@ -331,15 +343,21 @@ def get_client(
         or setting("DOCKERHUB_TOKEN", None)
     )
     jwt = jwt or config.get("jwt") or setting("DOCKERHUB_JWT", None)
-    if verify is None:
-        verify = setting("DOCKERHUB_SSL_VERIFY", True)
+    profile = tls_profile or resolve_configured_tls_profile(
+        "dockerhub",
+        profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
+        profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,
+    )
     if allow_destructive is None:
         allow_destructive = setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
 
     if jwt:
         logger.info("Using pre-minted Docker Hub JWT")
         return Api(
-            url=url, token=jwt, verify=verify, allow_destructive=allow_destructive
+            url=url,
+            token=jwt,
+            tls_profile=profile,
+            allow_destructive=allow_destructive,
         )
 
     if username and token:
@@ -347,12 +365,15 @@ def get_client(
             "Using Docker Hub credential exchange", extra={"identifier": username}
         )
         manager = get_token_manager(
-            identifier=username, secret=token, url=url, verify=verify
+            identifier=username,
+            secret=token,
+            url=url,
+            tls_profile=profile,
         )
         return Api(
             url=url,
             token_manager=manager,
-            verify=verify,
+            tls_profile=profile,
             allow_destructive=allow_destructive,
         )
 
@@ -360,7 +381,7 @@ def get_client(
         "No Docker Hub credentials configured — anonymous client "
         "(public endpoints only). Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN."
     )
-    return Api(url=url, verify=verify, allow_destructive=allow_destructive)
+    return Api(url=url, tls_profile=profile, allow_destructive=allow_destructive)
 
 
 def _resolve_credentials(
@@ -393,7 +414,7 @@ def get_registry_client(
     url: str | None = None,
     username: str | None = None,
     token: str | None = None,
-    verify: bool | None = None,
+    tls_profile: ResolvedTLSProfile | None = None,
     allow_destructive: bool | None = None,
     config: dict | None = None,
     transport: Any | None = None,
@@ -421,8 +442,11 @@ def get_registry_client(
         or DEFAULT_REGISTRY_AUTH_REALM
     )
     username, token = _resolve_credentials(username, token, config)
-    if verify is None:
-        verify = setting("DOCKERHUB_SSL_VERIFY", True)
+    profile = tls_profile or resolve_configured_tls_profile(
+        "dockerhub",
+        profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
+        profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,
+    )
     if allow_destructive is None:
         allow_destructive = setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
 
@@ -430,7 +454,7 @@ def get_registry_client(
         username=username,
         secret=token,
         realm=realm,
-        verify=verify,
+        tls_profile=profile,
         transport=transport,
     )
     if username:
@@ -442,7 +466,7 @@ def get_registry_client(
     return RegistryApi(
         url=url,
         registry_token_manager=token_manager,
-        verify=verify,
+        tls_profile=profile,
         allow_destructive=allow_destructive,
         transport=transport,
     )
@@ -453,7 +477,7 @@ def get_scout_client(
     username: str | None = None,
     token: str | None = None,
     jwt: str | None = None,
-    verify: bool | None = None,
+    tls_profile: ResolvedTLSProfile | None = None,
     config: dict | None = None,
     transport: Any | None = None,
 ) -> Any:
@@ -477,20 +501,34 @@ def get_scout_client(
     )
     jwt = jwt or config.get("jwt") or setting("DOCKERHUB_JWT", None)
     username, token = _resolve_credentials(username, token, config)
-    if verify is None:
-        verify = setting("DOCKERHUB_SSL_VERIFY", True)
+    profile = tls_profile or resolve_configured_tls_profile(
+        "dockerhub",
+        profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
+        profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,
+    )
 
     if jwt:
-        return ScoutApi(url=url, token=jwt, verify=verify, transport=transport)
+        return ScoutApi(
+            url=url,
+            token=jwt,
+            tls_profile=profile,
+            transport=transport,
+        )
     if username and token:
         manager = get_token_manager(
-            identifier=username, secret=token, url=hub_url, verify=verify
+            identifier=username,
+            secret=token,
+            url=hub_url,
+            tls_profile=profile,
         )
         return ScoutApi(
-            url=url, token_manager=manager, verify=verify, transport=transport
+            url=url,
+            token_manager=manager,
+            tls_profile=profile,
+            transport=transport,
         )
     logger.warning(
         "No Docker Hub credentials configured — Scout client is anonymous and "
         "most Scout endpoints will be unauthorized."
     )
-    return ScoutApi(url=url, verify=verify, transport=transport)
+    return ScoutApi(url=url, tls_profile=profile, transport=transport)

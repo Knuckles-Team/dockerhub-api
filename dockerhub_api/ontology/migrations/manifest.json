@@ -1,0 +1,6 @@
+{
+  "connector": "dockerhub-api",
+  "current_ontology_source": "dockerhub",
+  "migrations": [],
+  "schema_version": "1"
+}

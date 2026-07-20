@@ -5,91 +5,25 @@ pushes its data into the ONE epistemic-graph knowledge graph as **typed OWL node
 (``:Repository``, ``:ContainerImage``, ``:Namespace``, …) + links, matching the classes
 federated by ``dockerhub_api.ontology``.
 
-This is a thin mapper over the shared write primitive
-``agent_utilities.knowledge_graph.memory.native_ingest`` — the connector never re-implements
-the txn dance. The import is **guarded**: because that primitive is not yet present in every
-installed ``agent_utilities``, we fall back to a self-contained txn write over the lightweight
-engine client (``GraphComputeEngine()._client``). Either way everything is dependency-/engine-
-guarded: with no KG stack or no reachable engine, every entry point **no-ops** (returns
-``None``), so the connector runs with zero KG infrastructure. Node ids follow
-``dockerhub:<class>:<externalId>``; ``type`` on each entity matches a class in ``dockerhub.ttl``.
+This is a thin mapper over the required
+``agent_utilities.knowledge_graph.memory.native_ingest`` authority. Node ids follow
+``dockerhub:<class>:<externalId>``; ``node_type`` on each entity matches a class in
+``dockerhub.ttl``.
 """
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
-logger = logging.getLogger("dockerhub_api.kg")
+from agent_utilities.knowledge_graph.memory.native_ingest import (
+    ingest_documents as _native_ingest_documents,
+)
+from agent_utilities.knowledge_graph.memory.native_ingest import (
+    ingest_entities as _native_ingest_entities,
+)
 
 _SOURCE = "dockerhub-api"
 _DOMAIN = "dockerhub"
-_DEFAULT_GRAPH = "__commons__"
-
-
-def _fallback_client() -> tuple[Any | None, str]:
-    """Return ``(engine_client, graph_name)`` or ``(None, "")`` when unavailable."""
-    try:
-        from agent_utilities.knowledge_graph.core.graph_compute import (
-            GraphComputeEngine,
-        )
-    except Exception as e:  # noqa: BLE001 — KG stack absent
-        logger.debug("KG ingest unavailable (import): %s", e)
-        return None, ""
-    try:
-        engine = GraphComputeEngine()
-        client = getattr(engine, "_client", None)
-        if client is None:
-            return None, ""
-        return client, (getattr(engine, "graph_name", None) or _DEFAULT_GRAPH)
-    except Exception as e:  # noqa: BLE001 — engine unreachable
-        logger.debug("KG ingest: engine unreachable: %s", e)
-        return None, ""
-
-
-def _fallback_write(
-    entities: list[dict[str, Any]],
-    relationships: list[dict[str, Any]] | None,
-    *,
-    client: Any | None,
-    graph: str | None,
-) -> dict[str, int] | None:
-    """Self-contained txn write used when the shared primitive is absent."""
-    entities = [e for e in (entities or []) if e.get("id")]
-    if not entities:
-        return None
-    if client is None:
-        client, graph = _fallback_client()
-    if client is None:
-        return None
-    graph = graph or _DEFAULT_GRAPH
-    try:
-        txn = client.txn.begin(graph=graph)
-        for ent in entities:
-            props = {k: v for k, v in ent.items() if k != "id" and v is not None}
-            props.setdefault("source", _SOURCE)
-            props.setdefault("domain", _DOMAIN)
-            client.txn.add_node(txn, ent["id"], props)
-        committed = client.txn.commit(txn)
-    except Exception as e:  # noqa: BLE001 — engine/txn failure is non-fatal
-        logger.warning("KG ingest: txn failed: %s", e)
-        return None
-    if not committed:
-        logger.warning("KG ingest: txn not committed (conflict)")
-        return None
-    edges = 0
-    for rel in relationships or []:
-        try:
-            client.edges.add(
-                rel["source"], rel["target"], {"type": rel.get("type", "RELATED")}
-            )
-            edges += 1
-        except Exception as e:  # noqa: BLE001 — pure edge link, best-effort
-            logger.debug("KG ingest: edge skipped: %s", e)
-    logger.info("KG ingest: wrote %d nodes, %d edges", len(entities), edges)
-    return {"nodes": len(entities), "edges": edges}
-
-
 def ingest_entities(
     entities: list[dict[str, Any]],
     relationships: list[dict[str, Any]] | None = None,
@@ -98,29 +32,19 @@ def ingest_entities(
     domain: str = _DOMAIN,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
+) -> dict[str, int]:
     """Write typed OWL nodes (+ edges) into epistemic-graph.
 
-    ``entities``: ``[{"id":..., "type":<owl:Class>, ...props}]``.
-    ``relationships``: ``[{"source":id, "target":id, "type":<link>}]``.
-    Prefers the shared ``native_ingest`` primitive; falls back to a self-contained
-    txn write. Returns ``{"nodes":n, "edges":m}`` or ``None`` (never raises).
-    ``client``/``graph`` may be injected (tests); otherwise resolved on demand.
+    Uses canonical ``node_type`` / ``relationship`` structural fields.
     """
-    if not entities:
-        return None
-    if client is None:
-        try:
-            from agent_utilities.knowledge_graph.memory.native_ingest import (
-                ingest_entities as _shared,
-            )
-
-            return _shared(
-                entities, relationships, source=source, domain=domain, graph=graph
-            )
-        except Exception as e:  # noqa: BLE001 — primitive absent / unreachable
-            logger.debug("KG ingest: shared primitive unavailable: %s", e)
-    return _fallback_write(entities, relationships, client=client, graph=graph)
+    return _native_ingest_entities(
+        entities,
+        relationships,
+        source=source,
+        domain=domain,
+        client=client,
+        graph=graph,
+    )
 
 
 def ingest_documents(
@@ -130,33 +54,14 @@ def ingest_documents(
     domain: str = _DOMAIN,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
+) -> dict[str, int]:
     """Write text records as ``:Document`` nodes (semantic-search fodder).
 
-    Each doc: ``{"id":..., "text":..., "title"?:..., "source_uri"?:...}``. Prefers the
-    shared primitive; falls back to writing ``:Document`` nodes via the txn path.
+    Each doc: ``{"id":..., "text":..., "title"?:..., "source_uri"?:...}``.
     """
-    docs = [
-        d for d in (docs or []) if d.get("id") and (d.get("text") or d.get("content"))
-    ]
-    if not docs:
-        return None
-    if client is None:
-        try:
-            from agent_utilities.knowledge_graph.memory.native_ingest import (
-                ingest_documents as _shared,
-            )
-
-            return _shared(docs, source=source, domain=domain, graph=graph)
-        except Exception as e:  # noqa: BLE001 — primitive absent / unreachable
-            logger.debug("KG ingest: shared documents primitive unavailable: %s", e)
-    nodes: list[dict[str, Any]] = []
-    for doc in docs:
-        node = {k: v for k, v in doc.items() if k != "content" and v is not None}
-        node["type"] = "Document"
-        node["text"] = doc.get("text") or doc.get("content")
-        nodes.append(node)
-    return _fallback_write(nodes, None, client=client, graph=graph)
+    return _native_ingest_documents(
+        docs, source=source, domain=domain, client=client, graph=graph
+    )
 
 
 def _image_entities(
@@ -178,7 +83,7 @@ def _image_entities(
         entities.append(
             {
                 "id": img_id,
-                "type": "ContainerImage",
+                "node_type": "ContainerImage",
                 "name": name,
                 "repository": f"{namespace}/{repository}",
                 "digest": tag.get("digest") or first.get("digest"),
@@ -190,8 +95,12 @@ def _image_entities(
                 "externalToolId": str(tag.get("id") or img_id),
             }
         )
-        relationships.append({"source": img_id, "target": repo_id, "type": "imageOf"})
-        relationships.append({"source": repo_id, "target": img_id, "type": "hasImage"})
+        relationships.append(
+            {"source": img_id, "target": repo_id, "relationship": "imageOf"}
+        )
+        relationships.append(
+            {"source": repo_id, "target": img_id, "relationship": "hasImage"}
+        )
     return entities, relationships
 
 
@@ -201,7 +110,7 @@ def ingest_repositories(
     namespace: str | None = None,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
+) -> dict[str, int]:
     """Map Docker Hub repository records → ``:Repository`` (+ ``:Namespace``) nodes.
 
     Each repository may carry an inline ``tags`` list, which is mapped to
@@ -219,7 +128,7 @@ def ingest_repositories(
         entities.append(
             {
                 "id": repo_id,
-                "type": "Repository",
+                "node_type": "Repository",
                 "name": name,
                 "namespace": ns,
                 "description": repo.get("description"),
@@ -234,9 +143,9 @@ def ingest_repositories(
         ns_id = f"dockerhub:namespace:{ns}"
         if ns not in seen_ns:
             seen_ns.add(ns)
-            entities.append({"id": ns_id, "type": "Namespace", "name": ns})
+            entities.append({"id": ns_id, "node_type": "Namespace", "name": ns})
         relationships.append(
-            {"source": repo_id, "target": ns_id, "type": "inNamespace"}
+            {"source": repo_id, "target": ns_id, "relationship": "inNamespace"}
         )
         img_entities, img_rels = _image_entities(
             repo_id, ns, name, repo.get("tags") or []
@@ -253,17 +162,17 @@ def ingest_tags(
     *,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
+) -> dict[str, int]:
     """Map a repository's tags → ``:ContainerImage`` nodes linked to their ``:Repository``."""
     repo_id = f"dockerhub:repository:{namespace}/{repository}"
     entities, relationships = _image_entities(repo_id, namespace, repository, tags)
     if not entities:
-        return None
+        return ingest_entities([], client=client, graph=graph)
     # Ensure the repository anchor exists so :imageOf resolves.
     entities.append(
         {
             "id": repo_id,
-            "type": "Repository",
+            "node_type": "Repository",
             "name": repository,
             "namespace": namespace,
             "externalToolId": f"{namespace}/{repository}",

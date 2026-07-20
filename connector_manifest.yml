@@ -168,6 +168,7 @@ sync:
   updated_field: last_updated
   pagination: page
   doc_type: repository
+  tool_schema_sha256: a8e6df33d3141f5abc1ef47ff4e69267df353bc6d0b9c958fd2d04de12e96b17
   raw:
     server: dockerhub-api
     tool: hub_repos
@@ -184,17 +185,20 @@ sync:
     doc_type: repository
 provenance:
   generated_by: scripts/generate_connector_manifests.py
-  generated_at: '2026-07-09T00:00:00Z'
+  generated_at: '2026-07-18T00:00:00Z'
   source_artifacts:
   - a2a.json
   - dockerhub_api/connectors/mcp_source_presets.json
+  - dockerhub_api/connectors/tool_schema_fingerprints.json
   - dockerhub_api/ontology/dockerhub.ttl
   integrity:
     algorithm: urdna2015-sha256
     hash: 5b0f7e7fdb31562825502f89cf0067f4f748ba52433c2e663e3cfa5a8c24d1ea
     triple_count: 75
   signer: ontology-manifest-generator
-  signature: 33fb7cf4a3807b6fda33888f43a3583a91f2471f85118c5927e2dd0330f1d11e
+  signature_algorithm: ed25519
+  signing_public_key: q0Cp7bmQMqJhbofGKKw8xXC6KbFzukBDDke0UYVi8y4
+  signature: hwZM1aJsyN487myLrJcqIAuDoef08oLKvz5PhszSqBAu_NfdwkVnYKFg9u2wadqzLb3Z5nPQM2wdrSWk2UhFBg
 policy:
   pii_fields: {}
   tenant_boundary: null

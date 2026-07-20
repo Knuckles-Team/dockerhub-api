@@ -76,7 +76,7 @@ def redact_secrets(data: Any, allow_keys: set[str] | None = None) -> Any:
 
 def error_envelope(error: Exception) -> dict[str, Any]:
     """Map a client exception to the MCP error envelope."""
-    return {"error": {"type": type(error).__name__, "message": str(error)}}
+    return {"error": {"type": type(error).__name__, "message": type(error).__name__}}
 
 
 HANDLED_ERRORS = (

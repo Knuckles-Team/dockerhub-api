@@ -86,15 +86,15 @@ pip install "dockerhub-api[all]"     # everything
 | Extra | Adds |
 |---|---|
 | `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-utilities[mcp]` |
-| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-utilities[agent,logfire]` |
+| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-utilities[agent-runtime,logfire]` |
 | `all` | `mcp` + `agent` |
 | `test` | pytest toolchain for development |
 
 ```bash
-# MCP server only (recommended for tool hosting — slim deps)
+# Connector-focused MCP server (includes the shared graph engine)
 uv pip install "dockerhub-api[mcp]"
 
-# Full agent runtime (Pydantic AI + epistemic-graph engine)
+# Agent runtime (adds model orchestration to the shared graph engine)
 uv pip install "dockerhub-api[agent]"
 
 # Everything (development)
@@ -107,26 +107,27 @@ One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `
 
 | Image tag | Build target | Contents | Entrypoint |
 |-----------|--------------|----------|------------|
-| `knucklessg1/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **slim**, no engine/`pydantic-ai`/`dspy`/`llama-index`/`tree-sitter` | `dockerhub-mcp` |
-| `knucklessg1/dockerhub-api:latest` | `--target agent` (default) | `dockerhub-api[agent]` — **full** agent runtime + epistemic-graph engine | `dockerhub-agent` |
+| `example/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **connector-focused**, includes `epistemic-graph[full]`; no model-orchestration stack | `dockerhub-mcp` |
+| `example/dockerhub-api@sha256:<digest>` | `--target agent` (default) | `dockerhub-api[agent]` — **agent runtime**, model orchestration + `epistemic-graph[full]` | `dockerhub-agent` |
 
 ```bash
-docker build --target mcp   -t knucklessg1/dockerhub-api:mcp    docker/   # slim MCP server
-docker build --target agent -t knucklessg1/dockerhub-api:latest docker/   # full agent
+docker build --target mcp   -t example/dockerhub-api:mcp    docker/   # connector-focused MCP server
+docker build --target agent -t example/dockerhub-api:agent-local docker/   # agent runtime
 ```
 
-`docker/mcp.compose.yml` runs the slim `:mcp` server; `docker/agent.compose.yml` runs the
-agent (`:latest`) with a co-located `:mcp` sidecar.
+`docker/mcp.compose.yml` runs the connector-focused `:mcp` server; `docker/agent.compose.yml` runs the
+agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 
 ### Knowledge-graph database (`epistemic-graph`)
 
-The **full agent** (`[agent]` / `:latest`) embeds the **epistemic-graph** engine (pulled in
-transitively via `agent-utilities[agent]`). For production — or to share one knowledge graph
-across multiple agents — run **epistemic-graph as its own database container** and point the
-agent at it instead of embedding it. Deployment recipes (single-node + Raft HA), connection
-config, and the full database architecture (with diagrams) are documented in the
+Both `[mcp]` and `[agent]` carry the **epistemic-graph** engine through the required
+Agent Utilities core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
+the server connector-focused; `[agent]` additionally enables model orchestration. Local
+deployments can use the bundled engine. For production or shared state, run
+**epistemic-graph as a dedicated database service** and configure the runtime to use it.
+Deployment recipes (single-node + Raft HA), connection configuration, and architecture
+diagrams are documented in the
 [epistemic-graph deployment guide](https://knuckles-team.github.io/epistemic-graph/deployment/).
-The slim `[mcp]` server does **not** require the database.
 
 ---
 
@@ -242,11 +243,10 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
 
 <!-- MCP-CONFIG-EXAMPLES:START -->
 
-> **Install the slim `[mcp]` extra.** All examples install `dockerhub-api[mcp]` — the
-> MCP-server extra that pulls only the FastMCP / FastAPI tooling (`agent-utilities[mcp]`).
-> It deliberately **excludes** the heavy agent runtime (`pydantic-ai`, the epistemic-graph
-> engine, `dspy`, `llama-index`), so `uvx` / container installs are far smaller. Use the
-> full `[agent]` extra only when you need the integrated Pydantic AI agent.
+> **Install the connector-focused `[mcp]` extra.** Examples use `dockerhub-api[mcp]` to add
+> FastMCP / FastAPI through `agent-utilities[mcp]`; the required Agent Utilities core
+> still carries `epistemic-graph[full]`. The `[agent-runtime]` extra additionally
+> enables model orchestration.
 
 #### stdio Transport (local IDEs — Cursor, Claude Desktop, VS Code)
 
@@ -261,17 +261,15 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
         "dockerhub-mcp"
       ],
       "env": {
-        "MCP_TOOL_MODE": "condensed",
+        "MCP_TOOL_MODE": "intent",
         "ADMINTOOL": "True",
         "AUDITTOOL": "True",
         "AUTHTOOL": "True",
         "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
-        "DOCKERHUB_JWT": "",
+        "DOCKERHUB_TLS_PROFILE": "system",
         "DOCKERHUB_TOKEN": "dckr_pat_your_personal_access_token",
         "DOCKERHUB_URL": "https://hub.docker.com",
         "DOCKERHUB_USERNAME": "your_dockerhub_username",
-        "DOCKER_HUB_TOKEN": "",
-        "DOCKER_HUB_USER": "",
         "DOCKER_REGISTRY_AUTH_URL": "https://auth.docker.io/token",
         "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
         "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
@@ -287,6 +285,10 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
   }
 }
 ```
+
+Runtime references require an alias-aware launcher such as GraphOS. Other
+launchers must omit those entries and inject the resolved values through their
+own runtime secret boundary.
 
 #### Streamable-HTTP Transport (networked / production)
 
@@ -306,19 +308,17 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
       ],
       "env": {
         "TRANSPORT": "streamable-http",
-        "HOST": "0.0.0.0",
+        "HOST": "127.0.0.1",
         "PORT": "8000",
-        "MCP_TOOL_MODE": "condensed",
+        "MCP_TOOL_MODE": "intent",
         "ADMINTOOL": "True",
         "AUDITTOOL": "True",
         "AUTHTOOL": "True",
         "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
-        "DOCKERHUB_JWT": "",
+        "DOCKERHUB_TLS_PROFILE": "system",
         "DOCKERHUB_TOKEN": "dckr_pat_your_personal_access_token",
         "DOCKERHUB_URL": "https://hub.docker.com",
         "DOCKERHUB_USERNAME": "your_dockerhub_username",
-        "DOCKER_HUB_TOKEN": "",
-        "DOCKER_HUB_USER": "",
         "DOCKER_REGISTRY_AUTH_URL": "https://auth.docker.io/token",
         "DOCKER_REGISTRY_URL": "https://registry-1.docker.io",
         "DOCKER_SCOUT_URL": "https://api.scout.docker.com",
@@ -347,26 +347,26 @@ Alternatively, connect to a pre-deployed Streamable-HTTP instance by `url`:
 }
 ```
 
-Deploying the Streamable-HTTP server via Docker:
+Run a reviewed container image as a least-privilege stdio child (no
+listener or published port):
 
 ```bash
-docker run -d \
-  --name dockerhub-mcp-mcp \
-  -p 8000:8000 \
-  -e TRANSPORT=streamable-http \
-  -e HOST=0.0.0.0 \
-  -e PORT=8000 \
-  -e MCP_TOOL_MODE=condensed \
+docker run -i --rm \
+  --read-only \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges \
+  --pids-limit=256 \
+  --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m \
+  -e TRANSPORT=stdio \
+  -e MCP_TOOL_MODE=intent \
   -e ADMINTOOL=True \
   -e AUDITTOOL=True \
   -e AUTHTOOL=True \
   -e DOCKERHUB_ALLOW_DESTRUCTIVE=False \
-  -e DOCKERHUB_JWT="" \
+  -e DOCKERHUB_TLS_PROFILE=system \
   -e DOCKERHUB_TOKEN=dckr_pat_your_personal_access_token \
   -e DOCKERHUB_URL=https://hub.docker.com \
   -e DOCKERHUB_USERNAME=your_dockerhub_username \
-  -e DOCKER_HUB_TOKEN="" \
-  -e DOCKER_HUB_USER="" \
   -e DOCKER_REGISTRY_AUTH_URL=https://auth.docker.io/token \
   -e DOCKER_REGISTRY_URL=https://registry-1.docker.io \
   -e DOCKER_SCOUT_URL=https://api.scout.docker.com \
@@ -377,8 +377,13 @@ docker run -d \
   -e SCIMTOOL=True \
   -e SCOUTTOOL=True \
   -e TEAMSTOOL=True \
-  knucklessg1/dockerhub-api:mcp
+  registry.example.invalid/dockerhub-api@sha256:<digest> dockerhub-mcp
 ```
+
+For containerized network HTTP, supply an authenticated TLS ingress (or
+direct server TLS), exact `MCP_ALLOWED_HOSTS`, and an exact trusted-proxy
+CIDR policy through the operator-owned deployment profile. The generator
+does not emit an unauthenticated non-loopback listener.
 
 _Auto-generated from the code-read env surface (`MCP_TOOL_MODE` + package vars) — do not edit._
 <!-- MCP-CONFIG-EXAMPLES:END -->
@@ -386,16 +391,16 @@ _Auto-generated from the code-read env surface (`MCP_TOOL_MODE` + package vars) 
 <!-- BEGIN GENERATED: additional-deployment-options -->
 ### Additional Deployment Options
 
-`dockerhub-api` can also run as a **local container** (Docker / Podman / `uv`) or be
-consumed from a **remote deployment**. The
-[Deployment guide](https://knuckles-team.github.io/dockerhub-api/deployment/) has full, copy-paste
-`mcp_config.json` for all four transports — **stdio**, **streamable-http**,
-**local container / uv**, and **remote URL**:
+`dockerhub-api` can run as a local stdio process or container, or behind a remote
+network boundary. The
+[Deployment guide](https://knuckles-team.github.io/dockerhub-api/deployment/) carries
+the detailed transport contract.
 
-- **Local container / uv** — launch the server from `mcp_config.json` via `uvx`,
-  `docker run`, or `podman run`, or point at a local streamable-http container by `url`.
-- **Remote URL** — connect to a server deployed behind Caddy at
-  `http://dockerhub-mcp.arpa/mcp` using the `"url"` key.
+- **Local container** — launch a reviewed immutable image as a least-privilege
+  stdio child with no listener or published port.
+- **Remote URL** — connect through an operator-supplied authenticated HTTPS
+  ingress. Keep its URL, outbound identity references, trust profile, and exact
+  `MCP_ALLOWED_HOSTS` in `AgentConfig`.
 <!-- END GENERATED: additional-deployment-options -->
 
 ## Safety Model
@@ -419,23 +424,109 @@ The concept registry (`CONCEPT:DH-OS.governance.hub-x`) is documented in
 MIT — see [LICENSE](LICENSE).
 
 
-<!-- BEGIN agent-os-genesis-deploy (generated; do not edit between markers) -->
+<!-- BEGIN agent-utilities-deployment (generated; do not edit between markers) -->
 
-## Deploy with `agent-os-genesis`
+## Deploy with `agent-utilities-deployment`
 
-This package can be provisioned for you — skill-guided — by the **`agent-os-genesis`**
-universal skill (its *single-package deploy mode*): it picks your install method, seeds
-secrets to OpenBao/Vault (or `.env`), trusts your enterprise CA, registers the MCP
-server, and verifies it — the same machinery that stands up the whole Agent OS, narrowed
-to just this package. Ask your agent to **"deploy `dockerhub-api` with agent-os-genesis"**.
+Provision this package with the consolidated **`agent-utilities-deployment`**
+workflow. It selects an installed-package, editable-source, or immutable-container
+path; records only runtime secret and TLS-profile references in `AgentConfig`; and
+runs doctor, registration, policy, observability, and rollback gates. Ask your agent
+to **"deploy `dockerhub-api` with agent-utilities-deployment"**.
 
 | Install mode | Command |
 |------|---------|
-| Bare-metal, prod (PyPI) | `uvx dockerhub-mcp` · or `uv tool install dockerhub-api` |
-| Bare-metal, dev (editable) | `uv pip install -e ".[all]"` · or `pip install -e ".[all]"` |
-| Container, prod | deploy `knucklessg1/dockerhub-api:latest` via docker-compose / swarm / podman / podman-compose / kubernetes |
-| Container, dev (editable) | deploy `docker/compose.dev.yml` (source-mounted at `/src`; edits live on restart) |
+| Installed package | `uv tool install "dockerhub-api[mcp]"`, then run `dockerhub-mcp` |
+| Editable source | `uv pip install -e ".[agent]"`, then run `dockerhub-mcp` |
+| Immutable container | deploy `registry.example.invalid/dockerhub-api@sha256:<digest>` through the operator-selected orchestrator |
 
-Secrets are read-existing + seeded via `vault_sync` — you are only prompted for what's missing.
+The repository embeds no deployment profile, credential value, certificate path, or
+environment-specific endpoint. Supply those at runtime through `AgentConfig` and the
+configured secret provider.
 
-<!-- END agent-os-genesis-deploy -->
+<!-- END agent-utilities-deployment -->
+
+<!-- GOVERNED-CAPABILITY:START -->
+## Governed capability contract
+
+This package ships a compact canonical skill surface with specialist procedures
+kept as referenced workflows. The current MCP tools, skill metadata,
+`connector_manifest.yml`, ontology, mappings, shapes, fixtures, migrations,
+tool-schema fingerprints, and certification metadata form one versioned
+capability contract. Validate them together; do not rely on stale tool names or
+historical per-task skill wrappers.
+
+Runtime endpoints, credentials, certificate trust, tenant identity, retention,
+and observability policy are deployment inputs and are never packaged values.
+See [Configuration, trust, and privacy](docs/configuration.md) before enabling a
+network transport, connector ingestion, GraphOS delegation, or trace export.
+<!-- GOVERNED-CAPABILITY:END -->
+
+## Environment Variables
+
+<!-- ENV-VARS-TABLE:START -->
+
+#### Package environment variables
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `HOST` | `0.0.0.0` |  |
+| `PORT` | `8000` |  |
+| `TRANSPORT` | `stdio` | options: stdio, streamable-http, sse |
+| `FASTMCP_LOG_LEVEL` | `ERROR` |  |
+| `NO_COLOR` | `1` |  |
+| `TERM` | `dumb` | forced to "dumb" by the server to disable ANSI/color output |
+| `ENABLE_OTEL` | `True` |  |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:8080/api/public/otel` |  |
+| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` | secret-injected |  |
+| `OTEL_EXPORTER_OTLP_SECRET_KEY` | secret-injected |  |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` |  |
+| `EUNOMIA_TYPE` | `none` | options: none, embedded, remote |
+| `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
+| `EUNOMIA_REMOTE_URL` | `http://eunomia-server:8000` |  |
+| `DOCKER_HUB_USER` | — | Official hub-tool credential names (primary): |
+| `DOCKER_HUB_TOKEN` | secret-injected |  |
+| `DOCKERHUB_URL` | `https://hub.docker.com` | Fallback aliases: DOCKERHUB_USERNAME / DOCKERHUB_TOKEN / DOCKERHUB_JWT |
+| `DOCKERHUB_USERNAME` | `your_dockerhub_username` |  |
+| `DOCKERHUB_TOKEN` | secret-injected | password, PAT, or org access token |
+| `DOCKERHUB_JWT` | — | optional pre-minted bearer (overrides the above) |
+| `DOCKERHUB_TLS_PROFILE` | `system` | Named outbound TLS policy from AgentConfig. Use a reference for runtime-only trust material; peer and hostname verification remain mandatory. |
+| `DOCKERHUB_TLS_PROFILE_REF` | — |  |
+| `DOCKER_REGISTRY_URL` | `https://registry-1.docker.io` |  |
+| `DOCKER_REGISTRY_AUTH_URL` | `https://auth.docker.io/token` | token-service realm; auto-discovered from the 401 challenge |
+| `DOCKER_SCOUT_URL` | `https://api.scout.docker.com` |  |
+| `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` |  |
+| `AUTHTOOL` | `True` |  |
+| `REPOSTOOL` | `True` |  |
+| `ORGTOOL` | `True` |  |
+| `TEAMSTOOL` | `True` |  |
+| `AUDITTOOL` | `True` |  |
+| `SCIMTOOL` | `True` |  |
+| `ADMINTOOL` | `True` |  |
+| `REGISTRYTOOL` | `True` |  |
+| `SCOUTTOOL` | `True` |  |
+| `KGTOOL` | `True` |  |
+
+#### Inherited agent-utilities variables (apply to every connector)
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `MCP_TOOL_MODE` | `intent` | Tool surface: `intent` \| `condensed` \| `verbose` \| `both` |
+| `MCP_ENABLED_TOOLS` | — | Comma-separated tool allow-list |
+| `MCP_DISABLED_TOOLS` | — | Comma-separated tool deny-list |
+| `MCP_ENABLED_TAGS` | — | Comma-separated tag allow-list |
+| `MCP_DISABLED_TAGS` | — | Comma-separated tag deny-list |
+| `MCP_CLIENT_AUTH` | — | Outbound MCP child auth: `oidc-client-credentials` \| `basic` \| `none` |
+| `OIDC_CLIENT_ID` | — | OIDC client id (service-account auth) |
+| `OIDC_CLIENT_SECRET_REF` | `secret://identity/oidc-client-secret` | Runtime secret reference for the OIDC service account |
+| `MCP_BASIC_AUTH_USERNAME` | — | HTTP Basic username (`MCP_CLIENT_AUTH=basic`) |
+| `MCP_BASIC_AUTH_PASSWORD_REF` | `secret://identity/mcp-basic-password` | Runtime secret reference for HTTP Basic auth (`MCP_CLIENT_AUTH=basic`) |
+| `DEBUG` | `False` | Verbose logging |
+| `PYTHONUNBUFFERED` | `1` | Unbuffered stdout (recommended in containers) |
+| `MCP_URL` | `http://localhost:8000/mcp` | URL of the MCP server the agent connects to |
+| `PROVIDER` | `openai` | LLM provider for the agent |
+| `MODEL_ID` | `gpt-4o` | Model id for the agent |
+| `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
+
+_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+<!-- ENV-VARS-TABLE:END -->

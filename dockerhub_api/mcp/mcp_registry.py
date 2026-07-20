@@ -55,7 +55,7 @@ def register_registry_tools(mcp: FastMCP):
         try:
             kwargs = parse_params(params_json)
         except Exception as e:
-            return {"error": f"Invalid params_json: {e}"}
+            return {"error": "Operation failed"}
 
         handlers = {
             "api_version": client.api_version,

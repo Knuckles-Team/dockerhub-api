@@ -41,7 +41,7 @@ def register_org_tools(mcp: FastMCP):
         try:
             kwargs = parse_params(params_json)
         except Exception as e:
-            return {"error": f"Invalid params_json: {e}"}
+            return {"error": "Operation failed"}
 
         handlers = {
             "get_settings": client.get_org_settings,

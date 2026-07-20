@@ -160,11 +160,11 @@ exception is already documented here. Only commit once `pre-commit run
 ## Working with Git Worktrees (multi-session)
 
 Multiple agents/sessions work the `agent-packages/*` repos concurrently. **Do not
-edit the canonical checkout** (`/home/apps/workspace/agent-packages/agents/<repo>`)
+edit the canonical checkout** (`${WORKSPACE_ROOT}/agent-packages/agents/<repo>`)
 — take your own git worktree on your own branch instead:
 
 ```bash
-rm_worktree add <repo> <your-branch>      # -> /home/apps/worktrees/<repo>/<your-branch>
+rm_worktree add <repo> <your-branch>      # -> ${WORKTREE_ROOT}/<repo>/<your-branch>
 ```
 
 Work in the worktree and **commit often**. Each session must use a **distinct

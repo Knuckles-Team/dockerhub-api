@@ -26,6 +26,10 @@ from agent_utilities.core.exceptions import (
     ParameterError,
     UnauthorizedError,
 )
+from agent_utilities.core.transport_security import (
+    ResolvedTLSProfile,
+    resolve_configured_tls_profile,
+)
 
 logger = get_logger(__name__)
 
@@ -53,7 +57,7 @@ class DockerHubApiBase:
         password: str | None = None,
         token: str | None = None,
         token_manager: Any | None = None,
-        verify: bool = True,
+        tls_profile: ResolvedTLSProfile | None = None,
         timeout: float = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_after_cap: float = DEFAULT_RETRY_AFTER_CAP,
@@ -70,7 +74,7 @@ class DockerHubApiBase:
         from dockerhub_api.auth import DEFAULT_DOCKERHUB_URL, TokenManager
 
         self.url = (url or DEFAULT_DOCKERHUB_URL).rstrip("/")
-        self.verify = verify
+        self.tls_profile = tls_profile or resolve_configured_tls_profile("dockerhub")
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_after_cap = retry_after_cap
@@ -90,16 +94,16 @@ class DockerHubApiBase:
                 identifier=username,
                 secret=password,
                 url=self.url,
-                verify=verify,
+                tls_profile=self.tls_profile,
                 timeout=timeout,
                 transport=transport,
             )
 
         self._client = httpx.Client(
             base_url=self.url,
-            verify=verify,
             timeout=timeout,
             transport=transport,
+            **self.tls_profile.httpx_kwargs(),
         )
 
     # ------------------------------------------------------------------ #
@@ -321,10 +325,10 @@ class DockerHubApiBase:
         if status_code not in (200, 404) and status_code >= 400:
             # Map real errors (401/403/5xx); 404 simply means "does not exist".
             if status_code == 401:
-                raise AuthError(f"HTTP {status_code} for HEAD {endpoint}")
+                raise AuthError(f"HEAD request failed with HTTP {status_code}")
             if status_code == 403:
-                raise UnauthorizedError(f"HTTP {status_code} for HEAD {endpoint}")
-            raise ApiError(f"HTTP {status_code} for HEAD {endpoint}")
+                raise UnauthorizedError(f"HEAD request failed with HTTP {status_code}")
+            raise ApiError(f"HEAD request failed with HTTP {status_code}")
         envelope["exists"] = 200 <= status_code < 300
         return envelope
 

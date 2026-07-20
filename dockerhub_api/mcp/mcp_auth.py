@@ -43,7 +43,7 @@ def register_auth_tools(mcp: FastMCP):
         try:
             kwargs = parse_params(params_json)
         except Exception as e:
-            return {"error": f"Invalid params_json: {e}"}
+            return {"error": "Operation failed"}
 
         handlers = {
             "create_token": client.create_auth_token,

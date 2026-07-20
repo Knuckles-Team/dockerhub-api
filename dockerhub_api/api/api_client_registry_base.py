@@ -14,6 +14,7 @@ import time
 from typing import Any
 
 import httpx
+from agent_utilities.core.transport_security import ResolvedTLSProfile
 
 from dockerhub_api.api.api_client_base import (
     JSON_CONTENT_TYPE,
@@ -53,7 +54,7 @@ class RegistryApiBase(DockerHubApiBase):
         self,
         url: str | None = None,
         registry_token_manager: Any | None = None,
-        verify: bool = True,
+        tls_profile: ResolvedTLSProfile | None = None,
         timeout: float | None = None,
         allow_destructive: bool = False,
         debug: bool = False,
@@ -64,7 +65,7 @@ class RegistryApiBase(DockerHubApiBase):
 
         super().__init__(
             url=url or DEFAULT_REGISTRY_URL,
-            verify=verify,
+            tls_profile=tls_profile,
             timeout=timeout if timeout is not None else 30.0,
             allow_destructive=allow_destructive,
             debug=debug,
@@ -78,10 +79,10 @@ class RegistryApiBase(DockerHubApiBase):
         self._client.close()
         self._client = httpx.Client(
             base_url=self.url,
-            verify=verify,
             timeout=self.timeout,
             transport=transport,
             follow_redirects=True,
+            **self.tls_profile.httpx_kwargs(),
         )
 
     # ------------------------------------------------------------------ #

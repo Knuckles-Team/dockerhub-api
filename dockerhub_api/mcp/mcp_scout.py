@@ -46,7 +46,7 @@ def register_scout_tools(mcp: FastMCP):
         try:
             kwargs = parse_params(params_json)
         except Exception as e:
-            return {"error": f"Invalid params_json: {e}"}
+            return {"error": "Operation failed"}
 
         handlers = {
             "summary": client.get_image_summary,

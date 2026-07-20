@@ -35,7 +35,7 @@ def register_audit_tools(mcp: FastMCP):
         try:
             kwargs = parse_params(params_json)
         except Exception as e:
-            return {"error": f"Invalid params_json: {e}"}
+            return {"error": "Operation failed"}
 
         handlers = {
             "logs": client.get_audit_logs,
