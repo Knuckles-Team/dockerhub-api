@@ -1,5 +1,6 @@
 ---
 name: dockerhub-api-operations
+skill_type: skill
 description: >-
   Operate dockerhub-api through its governed MCP and GraphOS capabilities, including dockerhub image registry scout, dockerhub org administration, dockerhub repository management. Use when a request requires this provider's read, change, automation, ingestion, troubleshooting, or evidence workflows.
 ---
