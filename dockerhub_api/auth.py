@@ -57,6 +57,36 @@ _token_manager_lock = threading.Lock()
 _token_managers: dict[tuple, "TokenManager"] = {}
 
 
+def _entitled(namespace: str, names: list[str]) -> list[str]:
+    """Filter ``names`` to the subset the calling identity's Okta/Keycloak groups
+    entitle (CONCEPT:AU-OS.identity.identity-scoped-resource-autoload). Degrades
+    to the full list if agent-utilities predates the resolver, or if no caller
+    identity is bound at all (SYSTEM_ACTOR / unauthenticated-local sees all —
+    unchanged from pre-feature behavior, same as every other fleet caller of
+    ``identity_scoped_resources``). A *bound-but-unauthorized* actor still
+    fails closed — only the "nothing to check" case degrades.
+    """
+    try:
+        from agent_utilities.security.brain_context import IdentityRequiredError
+        from agent_utilities.security.entitlements import identity_scoped_resources
+    except Exception:
+        return list(names)
+    try:
+        return list(identity_scoped_resources(namespace, names))
+    except IdentityRequiredError:
+        return list(names)
+
+
+def _deny_unless_entitled(namespace_name: str | None) -> None:
+    """Deny building a client for a Docker Hub username/org the caller isn't
+    entitled to. A ``None``/anonymous identifier has nothing to check."""
+    if namespace_name and namespace_name not in _entitled("dockerhub", [namespace_name]):
+        raise PermissionError(
+            f"Your identity is not entitled to the Docker Hub namespace/org "
+            f"'{namespace_name}'."
+        )
+
+
 def parse_www_authenticate(header: str) -> dict[str, str]:
     """Parse a ``WWW-Authenticate: Bearer realm="...",service="..."`` header.
 
@@ -320,6 +350,9 @@ def get_client(
 
     ``DOCKERHUB_ALLOW_DESTRUCTIVE`` (default ``False``) gates deletes and
     org-settings writes. CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating.
+
+    A resolved ``username`` (personal account or org) the caller's identity is
+    not entitled to is denied before any credential exchange happens.
     """
     from dockerhub_api.api_client import Api
 
@@ -336,6 +369,7 @@ def get_client(
         or setting("DOCKER_HUB_USER", None)
         or setting("DOCKERHUB_USERNAME", None)
     )
+    _deny_unless_entitled(username)
     token = (
         token
         or config.get("token")
@@ -426,6 +460,9 @@ def get_registry_client(
     ``DOCKER_HUB_USER`` / ``DOCKER_HUB_TOKEN`` credentials (anonymous when
     unset, which still works for public pulls). Pushes, deletes, and blob
     uploads are gated by ``DOCKERHUB_ALLOW_DESTRUCTIVE``.
+
+    A resolved ``username`` (personal account or org) the caller's identity is
+    not entitled to is denied before any token is minted.
     """
     from dockerhub_api.api.api_client_registry import RegistryApi
 
@@ -442,6 +479,7 @@ def get_registry_client(
         or DEFAULT_REGISTRY_AUTH_REALM
     )
     username, token = _resolve_credentials(username, token, config)
+    _deny_unless_entitled(username)
     profile = tls_profile or resolve_configured_tls_profile(
         "dockerhub",
         profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
