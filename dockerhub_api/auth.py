@@ -80,7 +80,9 @@ def _entitled(namespace: str, names: list[str]) -> list[str]:
 def _deny_unless_entitled(namespace_name: str | None) -> None:
     """Deny building a client for a Docker Hub username/org the caller isn't
     entitled to. A ``None``/anonymous identifier has nothing to check."""
-    if namespace_name and namespace_name not in _entitled("dockerhub", [namespace_name]):
+    if namespace_name and namespace_name not in _entitled(
+        "dockerhub", [namespace_name]
+    ):
         raise PermissionError(
             f"Your identity is not entitled to the Docker Hub namespace/org "
             f"'{namespace_name}'."
