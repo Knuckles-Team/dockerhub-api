@@ -3,7 +3,7 @@ connector: dockerhub-api
 ontology_source: dockerhub
 sync:
 - preset: dockerhub-repositories
-  server: dockerhub-api
+  server: dockerhub-mcp
   tool: hub_repos
   action: list
   records_path: data.results
