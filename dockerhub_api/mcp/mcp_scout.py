@@ -45,7 +45,7 @@ def register_scout_tools(mcp: FastMCP):
             await ctx.info("Executing tool...")
         try:
             kwargs = parse_params(params_json)
-        except Exception as e:
+        except Exception:
             return {"error": "Operation failed"}
 
         handlers = {

@@ -2,7 +2,7 @@
   "api_version": "graphos.io/v1",
   "artifacts": {
     "a2a.json": "e7ef0d84d46f9a3bd63781f120553c81548fe112f31beb291a3ea51a406db563",
-    "connector_manifest.yml": "784999cc3d6d1a24762c26c638b3b025585317879437fd254252eda91708e060",
+    "connector_manifest.yml": "f8b3313303884315063cc6004b4b00922e9f7c1060b6dee10d5f83d3a17cee41",
     "dockerhub_api/connectors/mcp_source_presets.json": "2637950ddd3053498f29a4e9b1632603af31f358c67d45a0ddd592a77bb9eb41",
     "dockerhub_api/connectors/tool_schema_fingerprints.json": "007efd862d2988913fd45c37aed61cbb96fc61cfd86b0b612ae53b15a2f88dbe",
     "dockerhub_api/ontology/dockerhub.ttl": "bd3f4498e3e9463ee4395a5da1d6afcbfc081a1437e1be52437ab4d52e18d55a",
@@ -19,7 +19,7 @@
     "synthetic_fixture_contract": "passed"
   },
   "compatibility": {
-    "agent_utilities": ">=1.27.1,<2",
+    "agent_utilities": ">=2.1.0,<3",
     "bundle_schema": "2",
     "epistemic_graph": ">=2.23.1,<3"
   },
@@ -28,10 +28,10 @@
   "live_certified": false,
   "mode": "offline-source",
   "schema_version": "2",
-  "signature": "ksJgz_Y4tVQuE9RBUem2_5RKz97Vf1AFCJnAvBjwYcdxRYfztIE33elqdV_GUJiwZ4ikKn-kzhXuK6Qn5RHHDg",
+  "signature": "uXAcUxRbRqjQ4-m1w-MpWWVcAlNrpdAr9orpyc7dYEyOjKWCOILK10i2sL10unUK2aehO3AUTC0dtHkuj9C_Dg",
   "signature_algorithm": "ed25519",
   "signer": "ontology-manifest-generator",
-  "signing_public_key": "q0Cp7bmQMqJhbofGKKw8xXC6KbFzukBDDke0UYVi8y4",
+  "signing_public_key": "QkigdPNpcUU7x7NcSkwCsUXIQpaFncMQbYSoiSgI2SY",
   "status": "source-validated",
-  "validated_at": "2026-07-18T00:00:00Z"
+  "validated_at": "2026-07-28T10:14:00Z"
 }
