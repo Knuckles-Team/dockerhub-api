@@ -8,8 +8,14 @@ CONCEPT:AU-KG.ingest.enterprise-source-extractor.
 
 from __future__ import annotations
 
+from typing import Any
+
+import msgpack
 import pytest
 from agent_utilities.knowledge_graph.memory.native_ingest import NativeIngestError
+from agent_utilities.security.brain_context import ActorContext, use_actor
+from agent_utilities.models.company_brain import ActorType
+from agent_utilities.knowledge_graph.core.session import GraphSession, use_session
 
 from dockerhub_api.kg_ingest import (
     ingest_entities,
@@ -18,31 +24,92 @@ from dockerhub_api.kg_ingest import (
 )
 
 
-class _FakeTxn:
-    def __init__(self):
-        self.nodes = {}
-        self.edges = []
-        self.committed = False
+@pytest.fixture(autouse=True)
+def _governed_session():
+    actor = ActorContext(
+        actor_id="subject:opaque:synthetic",
+        actor_type=ActorType.AUTOMATED_SERVICE,
+        roles=(),
+        tenant_id="tenant:opaque:synthetic",
+        authenticated=True,
+    )
+    session = GraphSession(
+        actor=actor,
+        tenant=actor.tenant_id,
+        scopes=frozenset({"kg:write"}),
+        graph="graph:opaque:synthetic",
+        policy_version="policy:opaque:synthetic",
+        audience="epistemic-graph",
+    )
+    with use_actor(actor), use_session(session):
+        yield
 
-    def begin(self, graph=None):
-        self.graph = graph
-        return "txn-1"
 
-    def add_node(self, txn, node_id, props):
-        self.nodes[node_id] = props
+class _FakeNodes:
+    def __init__(self) -> None:
+        self.values: dict[str, dict[str, Any]] = {}
 
-    def add_edge(self, txn, src, dst, props):
-        self.edges.append((src, dst, props))
+    def properties(self, node_id: str) -> dict[str, Any] | None:
+        return self.values.get(node_id)
 
-    def commit(self, txn):
-        self.committed = True
-        return True
+    def list(self) -> list[tuple[str, dict[str, Any]]]:
+        return list(self.values.items())
 
+
+class _FakeChanges:
+    def __init__(self, nodes: _FakeNodes) -> None:
+        self.nodes = nodes
+        self.edges: list[tuple[str, str, dict[str, Any]]] = []
+        self.applied: list[dict[str, Any]] = []
+        self.records: dict[str, dict[str, Any]] = {}
+        self.versions: dict[str, dict[str, Any]] = {}
+
+    def get(self, envelope_id: str) -> dict[str, Any] | None:
+        return self.records.get(envelope_id)
+
+    def content_version(self, object_id: str) -> dict[str, Any] | None:
+        return self.versions.get(object_id)
+
+    def cursor(self, _source: str, _partition: str = "") -> None:
+        return None
+
+    def apply(self, envelope: dict[str, Any]) -> dict[str, Any]:
+        self.applied.append(envelope)
+        mutation = envelope["mutation"]
+        for operation in mutation["operations"]:
+            method = operation["method"]
+            params = method["params"]
+            properties = msgpack.unpackb(params["properties_msgpack"], raw=False)
+            if method["method"] == "AddNode":
+                self.nodes.values[params["node_id"]] = properties
+            elif method["method"] == "AddEdge":
+                self.edges.append(
+                    (params["source_id"], params["target_id"], properties)
+                )
+        version = envelope["content_version"]
+        self.versions[version["object_id"]] = version
+        self.records[envelope["envelope_id"]] = envelope
+        return {
+            "batch_id": mutation["batch_id"],
+            "replayed": False,
+            "projection_pending": False,
+        }
+
+
+class _FakeRdf:
+    def validate_shacl(self, _shapes: str, _data_graph: str) -> dict[str, Any]:
+        return {"conforms": True, "results": []}
 
 
 class _FakeClient:
-    def __init__(self):
-        self.txn = _FakeTxn()
+    def __init__(self) -> None:
+        self.nodes = _FakeNodes()
+        self.changes = _FakeChanges(self.nodes)
+        self.rdf = _FakeRdf()
+
+    @staticmethod
+    def supports(operation: str) -> bool:
+        return operation == "ApplyChangeEnvelope"
 
 
 def test_ingest_entities_writes_nodes_and_edges():
@@ -54,15 +121,14 @@ def test_ingest_entities_writes_nodes_and_edges():
         ],
         [{"source": "a", "target": "b", "relationship": "inNamespace"}],
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 2, "edges": 1}
-    assert c.txn.committed is True
-    assert set(c.txn.nodes) == {"a", "b"}
+    assert len(c.changes.applied) == 1
+    assert set(c.nodes.values) == {"a", "b"}
     # provenance is stamped
-    assert c.txn.nodes["a"]["source"] == "dockerhub-api"
-    assert c.txn.nodes["a"]["domain"] == "dockerhub"
-    assert c.txn.edges == [("a", "b", {"relationship": "inNamespace"})]
+    assert c.nodes.values["a"]["source"] == "dockerhub-api"
+    assert c.nodes.values["a"]["domain"] == "dockerhub"
+    assert c.changes.edges == [("a", "b", {"relationship": "inNamespace"})]
 
 
 def test_ingest_repositories_maps_repo_namespace_and_images():
@@ -93,24 +159,23 @@ def test_ingest_repositories_maps_repo_namespace_and_images():
             }
         ],
         client=c,
-        graph="__commons__",
     )
     # repo + namespace + image = 3 nodes
     assert res == {"nodes": 3, "edges": 3}
     repo_id = "dockerhub:repository:mycorp/api-gateway"
     ns_id = "dockerhub:namespace:mycorp"
     img_id = "dockerhub:image:mycorp/api-gateway:v1.4.2"
-    assert c.txn.nodes[repo_id]["node_type"] == "Repository"
-    assert c.txn.nodes[repo_id]["isPrivate"] is True
-    assert c.txn.nodes[repo_id]["pullCount"] == 1200
-    assert c.txn.nodes[ns_id]["node_type"] == "Namespace"
-    assert c.txn.nodes[img_id]["node_type"] == "ContainerImage"
-    assert c.txn.nodes[img_id]["digest"] == "sha256:abc"
-    assert c.txn.nodes[img_id]["architecture"] == "amd64"
+    assert c.nodes.values[repo_id]["node_type"] == "Repository"
+    assert c.nodes.values[repo_id]["isPrivate"] is True
+    assert c.nodes.values[repo_id]["pullCount"] == 1200
+    assert c.nodes.values[ns_id]["node_type"] == "Namespace"
+    assert c.nodes.values[img_id]["node_type"] == "ContainerImage"
+    assert c.nodes.values[img_id]["digest"] == "sha256:abc"
+    assert c.nodes.values[img_id]["architecture"] == "amd64"
     # edges: repo->ns (inNamespace), img->repo (imageOf), repo->img (hasImage)
-    assert (repo_id, ns_id, {"relationship": "inNamespace"}) in c.txn.edges
-    assert (img_id, repo_id, {"relationship": "imageOf"}) in c.txn.edges
-    assert (repo_id, img_id, {"relationship": "hasImage"}) in c.txn.edges
+    assert (repo_id, ns_id, {"relationship": "inNamespace"}) in c.changes.edges
+    assert (img_id, repo_id, {"relationship": "imageOf"}) in c.changes.edges
+    assert (repo_id, img_id, {"relationship": "hasImage"}) in c.changes.edges
 
 
 def test_ingest_tags_maps_images_with_repo_anchor():
@@ -120,14 +185,13 @@ def test_ingest_tags_maps_images_with_repo_anchor():
         "api-gateway",
         [{"name": "latest", "digest": "sha256:def", "full_size": 100}],
         client=c,
-        graph="__commons__",
     )
     # one image + the repository anchor
     assert res == {"nodes": 2, "edges": 2}
     img_id = "dockerhub:image:mycorp/api-gateway:latest"
     repo_id = "dockerhub:repository:mycorp/api-gateway"
-    assert c.txn.nodes[img_id]["node_type"] == "ContainerImage"
-    assert c.txn.nodes[repo_id]["node_type"] == "Repository"
+    assert c.nodes.values[img_id]["node_type"] == "ContainerImage"
+    assert c.nodes.values[repo_id]["node_type"] == "Repository"
 
 
 def test_ingest_rejects_legacy_structural_fields():
