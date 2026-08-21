@@ -1,8 +1,7 @@
 {
   "api_version": "graphos.io/v1",
   "artifacts": {
-    "a2a.json": "0da9d159a03832bbf3cf3421ce20ad5780eaa584060969650f470834faeac941",
-    "connector_manifest.yml": "8418a4128ac59b4fe6658b3b4fcb9e3a31413259ca82d9c570745fadb80ad0dd",
+    "connector_manifest.yml": "9b9246f766eaa8b0e2589b265a148ec9fcad5a1a9b1a9a97d134a2c24a4032b5",
     "dockerhub_api/connectors/mcp_source_presets.json": "19d1a698472ebea21545eb4ff05e860371332cdc14d3a6dbe79413acd2ff3225",
     "dockerhub_api/connectors/tool_schema_fingerprints.json": "007efd862d2988913fd45c37aed61cbb96fc61cfd86b0b612ae53b15a2f88dbe",
     "dockerhub_api/ontology/dockerhub.ttl": "bd3f4498e3e9463ee4395a5da1d6afcbfc081a1437e1be52437ab4d52e18d55a",
@@ -19,19 +18,19 @@
     "synthetic_fixture_contract": "passed"
   },
   "compatibility": {
-    "agent_utilities": ">=2.1.0,<3",
+    "agent_utilities": ">=2.4.0,<3",
     "bundle_schema": "2",
-    "epistemic_graph": ">=2.23.0,<3"
+    "epistemic_graph": ">=2.26.0,<3"
   },
   "connector": "dockerhub-api",
   "kind": "ConnectorSourceAttestation",
   "live_certified": false,
   "mode": "offline-source",
   "schema_version": "2",
-  "signature": "ToANhxpc_VwIdEr5EYeNw8AfzEtwQK9QPcJ6MplFxgQuLyzm9yTcY6oPJ62-DirmbUYPrN-_Z1mdi2fE0b8MAQ",
-  "signature_algorithm": "ed25519",
-  "signer": "ontology-manifest-generator",
-  "signing_public_key": "QkigdPNpcUU7x7NcSkwCsUXIQpaFncMQbYSoiSgI2SY",
+  "signature": null,
+  "signature_algorithm": "none",
+  "signer": "UNSIGNED-PREVIEW",
+  "signing_public_key": "",
   "status": "source-validated",
-  "validated_at": "2026-07-31T04:00:00Z"
+  "validated_at": "2026-08-21T04:30:39Z"
 }
