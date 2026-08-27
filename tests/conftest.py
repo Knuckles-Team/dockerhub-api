@@ -107,10 +107,45 @@ class MockHub:
 
     # ------------------------------------------------------------------ #
 
-    def _route(self, path, method, request):  # noqa: PLR0911,PLR0912
+    def _route(self, path, method, request):
         body = self._body(request) if request.content else {}
         params = dict(request.url.params)
 
+        routers = (
+            lambda: self._route_auth(path, method, body),
+            lambda: self._route_access_tokens(path, method, body),
+            lambda: self._route_org_access_tokens(path, method, body),
+            lambda: self._route_audit_logs(path, method, params),
+            lambda: self._route_org_settings(path, method, body),
+            lambda: self._route_org_members(path, method, body),
+            lambda: self._route_invites(path, method, body),
+            lambda: self._route_org_invites(path, method),
+            lambda: self._route_group_members(path, method, body),
+            lambda: self._route_group(path, method, body),
+            lambda: self._route_groups(path, method, body),
+            lambda: self._route_immutable_tags(path, method, body),
+            lambda: self._route_tags(path, method),
+            lambda: self._route_repository(path, method),
+            lambda: self._route_repositories(path, method, body),
+        )
+        for router in routers:
+            response = router()
+            if response is not None:
+                return response
+
+        # ---- SCIM 2.0 ---- #
+        if path.startswith("/v2/scim/2.0/"):
+            return self._scim_route(path, method, body, params)
+
+        return None
+
+    # ------------------------------------------------------------------ #
+    # _route helpers -- one per Docker Hub resource family, extracted    #
+    # from the single dispatch chain above (pure extract-method; every   #
+    # branch, comment, and canned response is unchanged).                #
+    # ------------------------------------------------------------------ #
+
+    def _route_auth(self, path, method, body):
         # ---- legacy login + 2FA ---- #
         if path == "/v2/users/login" and method == "POST":
             if body.get("username") == "totp-user":
@@ -123,7 +158,9 @@ class MockHub:
             if body.get("code") == "000000":
                 return self._json(401, {"detail": "invalid code"})
             return self._json(200, {"token": make_jwt(exp=time.time() + 600)})
+        return None
 
+    def _route_access_tokens(self, path, method, body):
         # ---- personal access tokens ---- #
         if path == "/v2/access-tokens":
             if method == "GET":
@@ -165,7 +202,9 @@ class MockHub:
                 return self._json(200, {"uuid": uuid, **body})
             if method == "DELETE":
                 return self._empty()
+        return None
 
+    def _route_org_access_tokens(self, path, method, body):
         # ---- org access tokens ---- #
         match = re.fullmatch(r"/v2/orgs/([^/]+)/access-tokens", path)
         if match:
@@ -188,7 +227,9 @@ class MockHub:
                 return self._json(200, {"id": token_id, **body})
             if method == "DELETE":
                 return self._empty()
+        return None
 
+    def _route_audit_logs(self, path, method, params):
         # ---- audit logs ---- #
         match = re.fullmatch(r"/v2/auditlogs/([^/]+)/actions", path)
         if match and method == "GET":
@@ -211,7 +252,9 @@ class MockHub:
                     ],
                 },
             )
+        return None
 
+    def _route_org_settings(self, path, method, body):
         # ---- org settings ---- #
         match = re.fullmatch(r"/v2/orgs/([^/]+)/settings", path)
         if match:
@@ -228,7 +271,9 @@ class MockHub:
                 )
             if method == "PUT":
                 return self._json(200, body)
+        return None
 
+    def _route_org_members(self, path, method, body):
         # ---- org members ---- #
         match = re.fullmatch(r"/v2/orgs/([^/]+)/members/export", path)
         if match and method == "GET":
@@ -257,7 +302,9 @@ class MockHub:
                     ],
                 },
             )
+        return None
 
+    def _route_invites(self, path, method, body):
         # ---- invites ---- #
         if path == "/v2/invites/bulk" and method == "POST":
             return self._json(202, body)
@@ -267,13 +314,18 @@ class MockHub:
         match = re.fullmatch(r"/v2/invites/([^/]+)", path)
         if match and method == "DELETE":
             return self._empty()
+        return None
+
+    def _route_org_invites(self, path, method):
         match = re.fullmatch(r"/v2/orgs/([^/]+)/invites", path)
         if match and method == "GET":
             return self._json(
                 200,
                 {"count": 1, "results": [{"id": "inv-1", "invitee": "new@x.io"}]},
             )
+        return None
 
+    def _route_group_members(self, path, method, body):
         # ---- groups (teams) ---- #
         match = re.fullmatch(r"/v2/orgs/([^/]+)/groups/([^/]+)/members/([^/]+)", path)
         if match and method == "DELETE":
@@ -286,6 +338,9 @@ class MockHub:
                 )
             if method == "POST":
                 return self._json(200, {"username": body.get("member")})
+        return None
+
+    def _route_group(self, path, method, body):
         match = re.fullmatch(r"/v2/orgs/([^/]+)/groups/([^/]+)", path)
         if match:
             group_name = match.group(2)
@@ -295,6 +350,9 @@ class MockHub:
                 return self._json(200, {"id": 7, "name": group_name, **body})
             if method == "DELETE":
                 return self._empty()
+        return None
+
+    def _route_groups(self, path, method, body):
         match = re.fullmatch(r"/v2/orgs/([^/]+)/groups", path)
         if match:
             if method == "GET":
@@ -303,7 +361,9 @@ class MockHub:
                 )
             if method == "POST":
                 return self._json(201, {"id": 8, **body})
+        return None
 
+    def _route_immutable_tags(self, path, method, body):
         # ---- repositories ---- #
         match = re.fullmatch(
             r"/v2/namespaces/([^/]+)/repositories/([^/]+)/immutabletags/verify", path
@@ -317,6 +377,9 @@ class MockHub:
         )
         if match and method == "PATCH":
             return self._json(200, body)
+        return None
+
+    def _route_tags(self, path, method):
         match = re.fullmatch(
             r"/v2/namespaces/([^/]+)/repositories/([^/]+)/tags/([^/]+)", path
         )
@@ -342,6 +405,9 @@ class MockHub:
                         "results": [{"name": "latest"}, {"name": "v1.0.0"}],
                     },
                 )
+        return None
+
+    def _route_repository(self, path, method):
         match = re.fullmatch(r"/v2/namespaces/([^/]+)/repositories/([^/]+)", path)
         if match:
             namespace, repo = match.groups()
@@ -354,6 +420,9 @@ class MockHub:
                     200,
                     {"name": repo, "namespace": namespace, "is_private": False},
                 )
+        return None
+
+    def _route_repositories(self, path, method, body):
         match = re.fullmatch(r"/v2/namespaces/([^/]+)/repositories", path)
         if match:
             if method == "GET":
@@ -369,11 +438,6 @@ class MockHub:
         match = re.fullmatch(r"/v2/repositories/([^/]+)/([^/]+)/groups", path)
         if match and method == "POST":
             return self._json(200, body)
-
-        # ---- SCIM 2.0 ---- #
-        if path.startswith("/v2/scim/2.0/"):
-            return self._scim_route(path, method, body, params)
-
         return None
 
     def _scim_route(self, path, method, body, params):
