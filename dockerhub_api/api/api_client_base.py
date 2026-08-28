@@ -226,6 +226,30 @@ class DockerHubApiBase:
         if params:
             params = {k: v for k, v in params.items() if v is not None}
 
+        response, rate_limit = self._send_with_retry(
+            method, endpoint, params, json, content_type, accept
+        )
+
+        data = self._parse_body(response)
+        if raise_for_status and response.status_code >= 400:
+            self._raise_for_status(response, data)
+
+        return {
+            "status_code": response.status_code,
+            "data": data,
+            "rate_limit": rate_limit or dict(self.rate_limit),
+        }
+
+    def _send_with_retry(
+        self,
+        method: str,
+        endpoint: str,
+        params: dict | None,
+        json: Any | None,
+        content_type: str | None,
+        accept: str | None,
+    ) -> tuple[httpx.Response, dict]:
+        """Send the request, transparently handling 429 backoff and one 401 retry."""
         attempts = 0
         refreshed_token = False
         while True:
@@ -238,37 +262,38 @@ class DockerHubApiBase:
             )
             rate_limit = self._capture_rate_limit(response)
 
-            if response.status_code == 429 and attempts < self.max_retries:
+            if self._should_retry_rate_limit(response, attempts):
                 attempts += 1
-                delay = self._retry_after_seconds(response)
-                logger.debug(
-                    "Rate limited; retrying",
-                    extra={"attempt": attempts, "delay": delay},
-                )
-                if delay > 0:
-                    time.sleep(delay)
+                self._wait_before_retry(response, attempts)
                 continue
 
-            if (
-                response.status_code == 401
-                and self._token_manager is not None
-                and not refreshed_token
-            ):
+            if self._should_refresh_token(response, refreshed_token):
                 refreshed_token = True
                 self._token_manager.invalidate()
                 continue
 
-            break
+            return response, rate_limit
 
-        data = self._parse_body(response)
-        if raise_for_status and response.status_code >= 400:
-            self._raise_for_status(response, data)
+    def _should_retry_rate_limit(self, response: httpx.Response, attempts: int) -> bool:
+        return response.status_code == 429 and attempts < self.max_retries
 
-        return {
-            "status_code": response.status_code,
-            "data": data,
-            "rate_limit": rate_limit or dict(self.rate_limit),
-        }
+    def _should_refresh_token(
+        self, response: httpx.Response, refreshed_token: bool
+    ) -> bool:
+        return (
+            response.status_code == 401
+            and self._token_manager is not None
+            and not refreshed_token
+        )
+
+    def _wait_before_retry(self, response: httpx.Response, attempts: int) -> None:
+        delay = self._retry_after_seconds(response)
+        logger.debug(
+            "Rate limited; retrying",
+            extra={"attempt": attempts, "delay": delay},
+        )
+        if delay > 0:
+            time.sleep(delay)
 
     def _retry_after_seconds(self, response: httpx.Response) -> float:
         raw = response.headers.get("Retry-After", "1")
@@ -290,31 +315,38 @@ class DockerHubApiBase:
                 return response.text
         return response.text
 
+    #: Status codes with a fixed exception type and no extra message detail.
+    _STATUS_EXCEPTIONS: dict[int, type[Exception]] = {
+        400: ParameterError,
+        401: AuthError,
+        403: UnauthorizedError,
+        404: ParameterError,
+    }
+
+    @staticmethod
+    def _error_detail(data: Any) -> str:
+        if not isinstance(data, dict):
+            return ""
+        return str(data.get("detail") or data.get("message") or data.get("errinfo") or "")
+
+    def _rate_limited_message(self, message: str) -> str:
+        return (
+            f"{message} — rate limited after {self.max_retries} retries "
+            f"(remaining={self.rate_limit.get('remaining')}, "
+            f"reset={self.rate_limit.get('reset')})"
+        )
+
     def _raise_for_status(self, response: httpx.Response, data: Any) -> None:
-        detail = ""
-        if isinstance(data, dict):
-            detail = str(
-                data.get("detail") or data.get("message") or data.get("errinfo") or ""
-            )
+        detail = self._error_detail(data)
         message = f"HTTP {response.status_code} for {response.request.method} {response.request.url.path}"
         if detail:
             message = f"{message}: {detail}"
 
-        if response.status_code == 400:
-            raise ParameterError(message)
-        if response.status_code == 401:
-            raise AuthError(message)
-        if response.status_code == 403:
-            raise UnauthorizedError(message)
-        if response.status_code == 404:
-            raise ParameterError(message)
         if response.status_code == 429:
-            raise ApiError(
-                f"{message} — rate limited after {self.max_retries} retries "
-                f"(remaining={self.rate_limit.get('remaining')}, "
-                f"reset={self.rate_limit.get('reset')})"
-            )
-        raise ApiError(message)
+            raise ApiError(self._rate_limited_message(message))
+
+        exception_type = self._STATUS_EXCEPTIONS.get(response.status_code, ApiError)
+        raise exception_type(message)
 
     def _exists(self, endpoint: str, params: dict | None = None) -> dict[str, Any]:
         """HEAD helper: existence check without raising on 404."""
