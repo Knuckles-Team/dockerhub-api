@@ -48,30 +48,52 @@ def _import_module_safely(module_name: str):
         return None
 
 
-def __getattr__(name: str) -> Any:
-    # Handle availability flags dynamically without eager imports
-    if name == "_MCP_AVAILABLE":
-        mcp_key = next((k for k in OPTIONAL_MODULES if "mcp_server" in k), None)
-        if mcp_key:
-            return _import_module_safely(mcp_key) is not None
-        return False
-    if name == "_AGENT_AVAILABLE":
-        agent_key = next((k for k in OPTIONAL_MODULES if "agent_server" in k), None)
-        if agent_key:
-            return _import_module_safely(agent_key) is not None
-        return False
+_AVAILABILITY_FLAG_MARKERS = {
+    "_MCP_AVAILABLE": "mcp_server",
+    "_AGENT_AVAILABLE": "agent_server",
+}
+_NOT_AN_AVAILABILITY_FLAG = object()
+_NAME_NOT_FOUND = object()
 
-    # Check optional modules
+
+def _resolve_availability_flag(name: str) -> Any:
+    """Return the live availability bool for a ``_*_AVAILABLE`` flag name.
+
+    Returns ``_NOT_AN_AVAILABILITY_FLAG`` when ``name`` is not one of the
+    recognized flags, so callers can distinguish "not a flag" from "flag
+    resolved to False".
+    """
+    marker = _AVAILABILITY_FLAG_MARKERS.get(name)
+    if marker is None:
+        return _NOT_AN_AVAILABILITY_FLAG
+    module_key = next((k for k in OPTIONAL_MODULES if marker in k), None)
+    if module_key is None:
+        return False
+    return _import_module_safely(module_key) is not None
+
+
+def _resolve_from_optional_modules(name: str) -> Any:
+    """Lazily import each optional module and return its ``name`` attribute."""
     for module_name in OPTIONAL_MODULES:
-        if module_name not in _loaded_optional_modules:
+        module = _loaded_optional_modules.get(module_name)
+        if module is None:
             module = _import_module_safely(module_name)
             if module is not None:
                 _loaded_optional_modules[module_name] = module
                 _expose_members(module)
-
-        module = _loaded_optional_modules.get(module_name)
         if module is not None and hasattr(module, name):
             return getattr(module, name)
+    return _NAME_NOT_FOUND
+
+
+def __getattr__(name: str) -> Any:
+    flag = _resolve_availability_flag(name)
+    if flag is not _NOT_AN_AVAILABILITY_FLAG:
+        return flag
+
+    value = _resolve_from_optional_modules(name)
+    if value is not _NAME_NOT_FOUND:
+        return value
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
