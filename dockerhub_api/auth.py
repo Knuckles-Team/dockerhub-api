@@ -21,6 +21,7 @@ import binascii
 import json
 import threading
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -329,6 +330,76 @@ def get_token_manager(
         return manager
 
 
+def _resolve_tls_profile(
+    tls_profile: ResolvedTLSProfile | None,
+) -> ResolvedTLSProfile:
+    """Resolve the shared Docker Hub/registry TLS profile, honouring an override."""
+    return tls_profile or resolve_configured_tls_profile(
+        "dockerhub",
+        profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
+        profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,
+    )
+
+
+def _resolve_allow_destructive(allow_destructive: bool | None) -> bool:
+    if allow_destructive is None:
+        return setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
+    return allow_destructive
+
+
+@dataclass
+class _HubCredentials:
+    url: str
+    username: str | None
+    token: str | None
+    jwt: str | None
+
+
+def _resolve_hub_url(url: str | None, config: dict) -> str:
+    return str(
+        url or config.get("url") or setting("DOCKERHUB_URL", None) or DEFAULT_DOCKERHUB_URL
+    )
+
+
+def _resolve_hub_username(username: str | None, config: dict) -> str | None:
+    return (
+        username
+        or config.get("username")
+        or setting("DOCKER_HUB_USER", None)
+        or setting("DOCKERHUB_USERNAME", None)
+    )
+
+
+def _resolve_hub_token(token: str | None, config: dict) -> str | None:
+    return (
+        token
+        or config.get("token")
+        or setting("DOCKER_HUB_TOKEN", None)
+        or setting("DOCKERHUB_TOKEN", None)
+    )
+
+
+def _resolve_hub_jwt(jwt: str | None, config: dict) -> str | None:
+    return jwt or config.get("jwt") or setting("DOCKERHUB_JWT", None)
+
+
+def _resolve_hub_credentials(
+    url: str | None,
+    username: str | None,
+    token: str | None,
+    jwt: str | None,
+    config: dict | None,
+) -> _HubCredentials:
+    """Resolve the Hub management-API URL and credentials from args/config/env."""
+    config = config or {}
+    return _HubCredentials(
+        url=_resolve_hub_url(url, config),
+        username=_resolve_hub_username(username, config),
+        token=_resolve_hub_token(token, config),
+        jwt=_resolve_hub_jwt(jwt, config),
+    )
+
+
 def get_client(
     url: str | None = None,
     username: str | None = None,
@@ -358,56 +429,33 @@ def get_client(
     """
     from dockerhub_api.api_client import Api
 
-    config = config or {}
-    url = str(
-        url
-        or config.get("url")
-        or setting("DOCKERHUB_URL", None)
-        or DEFAULT_DOCKERHUB_URL
-    )
-    username = (
-        username
-        or config.get("username")
-        or setting("DOCKER_HUB_USER", None)
-        or setting("DOCKERHUB_USERNAME", None)
-    )
-    _deny_unless_entitled(username)
-    token = (
-        token
-        or config.get("token")
-        or setting("DOCKER_HUB_TOKEN", None)
-        or setting("DOCKERHUB_TOKEN", None)
-    )
-    jwt = jwt or config.get("jwt") or setting("DOCKERHUB_JWT", None)
-    profile = tls_profile or resolve_configured_tls_profile(
-        "dockerhub",
-        profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
-        profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,
-    )
-    if allow_destructive is None:
-        allow_destructive = setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
+    creds = _resolve_hub_credentials(url, username, token, jwt, config)
+    _deny_unless_entitled(creds.username)
+    profile = _resolve_tls_profile(tls_profile)
+    allow_destructive = _resolve_allow_destructive(allow_destructive)
 
-    if jwt:
+    if creds.jwt:
         logger.info("Using pre-minted Docker Hub JWT")
         return Api(
-            url=url,
-            token=jwt,
+            url=creds.url,
+            token=creds.jwt,
             tls_profile=profile,
             allow_destructive=allow_destructive,
         )
 
-    if username and token:
+    if creds.username and creds.token:
         logger.info(
-            "Using Docker Hub credential exchange", extra={"identifier": username}
+            "Using Docker Hub credential exchange",
+            extra={"identifier": creds.username},
         )
         manager = get_token_manager(
-            identifier=username,
-            secret=token,
-            url=url,
+            identifier=creds.username,
+            secret=creds.token,
+            url=creds.url,
             tls_profile=profile,
         )
         return Api(
-            url=url,
+            url=creds.url,
             token_manager=manager,
             tls_profile=profile,
             allow_destructive=allow_destructive,
@@ -417,7 +465,7 @@ def get_client(
         "No Docker Hub credentials configured — anonymous client "
         "(public endpoints only). Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN."
     )
-    return Api(url=url, tls_profile=profile, allow_destructive=allow_destructive)
+    return Api(url=creds.url, tls_profile=profile, allow_destructive=allow_destructive)
 
 
 def _resolve_credentials(
@@ -444,6 +492,15 @@ def _resolve_credentials(
         or setting("DOCKERHUB_TOKEN", None)
     )
     return username, token
+
+
+def _log_registry_auth_mode(username: str | None) -> None:
+    if username:
+        logger.info(
+            "Using Docker Registry scoped tokens", extra={"identifier": username}
+        )
+    else:
+        logger.info("Using anonymous Docker Registry tokens (public pulls only)")
 
 
 def get_registry_client(
@@ -482,13 +539,8 @@ def get_registry_client(
     )
     username, token = _resolve_credentials(username, token, config)
     _deny_unless_entitled(username)
-    profile = tls_profile or resolve_configured_tls_profile(
-        "dockerhub",
-        profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
-        profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,
-    )
-    if allow_destructive is None:
-        allow_destructive = setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
+    profile = _resolve_tls_profile(tls_profile)
+    allow_destructive = _resolve_allow_destructive(allow_destructive)
 
     token_manager = RegistryTokenManager(
         username=username,
@@ -497,12 +549,7 @@ def get_registry_client(
         tls_profile=profile,
         transport=transport,
     )
-    if username:
-        logger.info(
-            "Using Docker Registry scoped tokens", extra={"identifier": username}
-        )
-    else:
-        logger.info("Using anonymous Docker Registry tokens (public pulls only)")
+    _log_registry_auth_mode(username)
     return RegistryApi(
         url=url,
         registry_token_manager=token_manager,
@@ -510,6 +557,46 @@ def get_registry_client(
         allow_destructive=allow_destructive,
         transport=transport,
     )
+
+
+def _resolve_scout_urls(url: str | None, config: dict | None) -> tuple[str, str]:
+    """Resolve the Scout API URL and the Hub URL used to mint its JWT."""
+    config = config or {}
+    scout_url = str(
+        url
+        or config.get("scout_url")
+        or setting("DOCKER_SCOUT_URL", None)
+        or DEFAULT_SCOUT_URL
+    )
+    hub_url = str(
+        config.get("url") or setting("DOCKERHUB_URL", None) or DEFAULT_DOCKERHUB_URL
+    )
+    return scout_url, hub_url
+
+
+def _resolve_scout_auth_kwargs(
+    jwt: str | None,
+    username: str | None,
+    token: str | None,
+    hub_url: str,
+    profile: ResolvedTLSProfile,
+) -> dict[str, Any]:
+    """Return the ``token``/``token_manager`` kwarg for :class:`ScoutApi`, if any."""
+    if jwt:
+        return {"token": jwt}
+    if username and token:
+        manager = get_token_manager(
+            identifier=username,
+            secret=token,
+            url=hub_url,
+            tls_profile=profile,
+        )
+        return {"token_manager": manager}
+    logger.warning(
+        "No Docker Hub credentials configured — Scout client is anonymous and "
+        "most Scout endpoints will be unauthorized."
+    )
+    return {}
 
 
 def get_scout_client(
@@ -529,46 +616,12 @@ def get_scout_client(
     """
     from dockerhub_api.api.api_client_scout import ScoutApi
 
-    config = config or {}
-    url = str(
-        url
-        or config.get("scout_url")
-        or setting("DOCKER_SCOUT_URL", None)
-        or DEFAULT_SCOUT_URL
-    )
-    hub_url = str(
-        config.get("url") or setting("DOCKERHUB_URL", None) or DEFAULT_DOCKERHUB_URL
-    )
-    jwt = jwt or config.get("jwt") or setting("DOCKERHUB_JWT", None)
+    scout_url, hub_url = _resolve_scout_urls(url, config)
+    jwt = jwt or (config or {}).get("jwt") or setting("DOCKERHUB_JWT", None)
     username, token = _resolve_credentials(username, token, config)
-    profile = tls_profile or resolve_configured_tls_profile(
-        "dockerhub",
-        profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
-        profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,
-    )
+    profile = _resolve_tls_profile(tls_profile)
 
-    if jwt:
-        return ScoutApi(
-            url=url,
-            token=jwt,
-            tls_profile=profile,
-            transport=transport,
-        )
-    if username and token:
-        manager = get_token_manager(
-            identifier=username,
-            secret=token,
-            url=hub_url,
-            tls_profile=profile,
-        )
-        return ScoutApi(
-            url=url,
-            token_manager=manager,
-            tls_profile=profile,
-            transport=transport,
-        )
-    logger.warning(
-        "No Docker Hub credentials configured — Scout client is anonymous and "
-        "most Scout endpoints will be unauthorized."
+    auth_kwargs = _resolve_scout_auth_kwargs(jwt, username, token, hub_url, profile)
+    return ScoutApi(
+        url=scout_url, tls_profile=profile, transport=transport, **auth_kwargs
     )
-    return ScoutApi(url=url, tls_profile=profile, transport=transport)
