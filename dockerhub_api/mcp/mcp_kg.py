@@ -15,6 +15,31 @@ from pydantic import Field
 from dockerhub_api.mcp import get_hub_client, parse_params
 
 
+def _envelope_results(envelope: Any) -> list:
+    """Unwrap a client response envelope down to its ``results`` list."""
+    data = envelope.get("data") if isinstance(envelope, dict) else envelope
+    results = (data or {}).get("results") if isinstance(data, dict) else data
+    return list(results or [])
+
+
+def _fetch_repo_tags(client: Any, namespace: str, repo_name: str) -> list:
+    """Best-effort tag fetch for one repository; ``[]`` on any failure."""
+    try:
+        envelope = client.get_repository_tags(namespace=namespace, repository=repo_name)
+    except Exception:  # noqa: BLE001 — best-effort tag enrichment
+        return []
+    return _envelope_results(envelope)
+
+
+def _enrich_repos_with_tags(client: Any, namespace: str, repos: list) -> None:
+    """Attach a ``tags`` list to each repo dict that has a ``name``, in place."""
+    for repo in repos:
+        rname = repo.get("name")
+        if not rname:
+            continue
+        repo["tags"] = _fetch_repo_tags(client, namespace, rname)
+
+
 def register_kg_tools(mcp: FastMCP):
     @mcp.tool(tags={"kg"})
     async def dockerhub_ingest_repositories(
@@ -52,28 +77,10 @@ def register_kg_tools(mcp: FastMCP):
         include_tags = bool(kwargs.pop("include_tags", False))
 
         envelope = client.get_repositories(**kwargs)
-        data = envelope.get("data") if isinstance(envelope, dict) else envelope
-        results = (data or {}).get("results") if isinstance(data, dict) else data
-        repos = list(results or [])
+        repos = _envelope_results(envelope)
 
         if include_tags:
-            for repo in repos:
-                rname = repo.get("name")
-                if not rname:
-                    continue
-                try:
-                    tenv = client.get_repository_tags(
-                        namespace=namespace, repository=rname
-                    )
-                    tdata = tenv.get("data") if isinstance(tenv, dict) else tenv
-                    tags = (
-                        (tdata or {}).get("results")
-                        if isinstance(tdata, dict)
-                        else tdata
-                    )
-                    repo["tags"] = list(tags or [])
-                except Exception:  # noqa: BLE001 — best-effort tag enrichment
-                    repo["tags"] = []
+            _enrich_repos_with_tags(client, namespace, repos)
 
         result = ingest_repositories(repos, namespace=namespace)
         return {"listed": len(repos), "ingested": result}
