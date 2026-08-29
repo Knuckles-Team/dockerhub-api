@@ -440,73 +440,121 @@ class MockHub:
             return self._json(200, body)
         return None
 
-    def _scim_route(self, path, method, body, params):
-        scim = "application/scim+json"
-        if path == "/v2/scim/2.0/ServiceProviderConfig" and method == "GET":
+    _SCIM_CONTENT_TYPE = "application/scim+json"
+
+    def _scim_service_provider_config(self, match, method, params, body):
+        if method != "GET":
+            return None
+        return self._json(
+            200,
+            {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"
+                ],
+                "patch": {"supported": False},
+                "filter": {"supported": True, "maxResults": 200},
+            },
+            content_type=self._SCIM_CONTENT_TYPE,
+        )
+
+    def _scim_resource_types(self, match, method, params, body):
+        if method != "GET":
+            return None
+        return self._json(
+            200,
+            {"totalResults": 1, "Resources": [{"id": "User", "name": "User"}]},
+            content_type=self._SCIM_CONTENT_TYPE,
+        )
+
+    def _scim_resource_type_by_id(self, match, method, params, body):
+        if method != "GET":
+            return None
+        rid = match.group(1)
+        return self._json(200, {"id": rid, "name": rid}, content_type=self._SCIM_CONTENT_TYPE)
+
+    def _scim_schemas(self, match, method, params, body):
+        if method != "GET":
+            return None
+        return self._json(
+            200,
+            {
+                "totalResults": 1,
+                "Resources": [{"id": "urn:ietf:params:scim:schemas:core:2.0:User"}],
+            },
+            content_type=self._SCIM_CONTENT_TYPE,
+        )
+
+    def _scim_schema_by_id(self, match, method, params, body):
+        if method != "GET":
+            return None
+        return self._json(
+            200, {"id": match.group(1)}, content_type=self._SCIM_CONTENT_TYPE
+        )
+
+    def _scim_users(self, match, method, params, body):
+        if method == "GET":
             return self._json(
                 200,
                 {
-                    "schemas": [
-                        "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"
-                    ],
-                    "patch": {"supported": False},
-                    "filter": {"supported": True, "maxResults": 200},
-                },
-                content_type=scim,
-            )
-        if path == "/v2/scim/2.0/ResourceTypes" and method == "GET":
-            return self._json(
-                200,
-                {"totalResults": 1, "Resources": [{"id": "User", "name": "User"}]},
-                content_type=scim,
-            )
-        match = re.fullmatch(r"/v2/scim/2.0/ResourceTypes/([^/]+)", path)
-        if match and method == "GET":
-            return self._json(
-                200, {"id": match.group(1), "name": match.group(1)}, content_type=scim
-            )
-        if path == "/v2/scim/2.0/Schemas" and method == "GET":
-            return self._json(
-                200,
-                {
+                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
                     "totalResults": 1,
-                    "Resources": [{"id": "urn:ietf:params:scim:schemas:core:2.0:User"}],
+                    "startIndex": int(params.get("startIndex", 1)),
+                    "itemsPerPage": int(params.get("count", 50)),
+                    "Resources": [{"id": "scim-1", "userName": "jane@example.com"}],
                 },
-                content_type=scim,
+                content_type=self._SCIM_CONTENT_TYPE,
             )
-        match = re.fullmatch(r"/v2/scim/2.0/Schemas/(.+)", path)
-        if match and method == "GET":
-            return self._json(200, {"id": match.group(1)}, content_type=scim)
-        if path == "/v2/scim/2.0/Users":
-            if method == "GET":
-                return self._json(
-                    200,
-                    {
-                        "schemas": [
-                            "urn:ietf:params:scim:api:messages:2.0:ListResponse"
-                        ],
-                        "totalResults": 1,
-                        "startIndex": int(params.get("startIndex", 1)),
-                        "itemsPerPage": int(params.get("count", 50)),
-                        "Resources": [{"id": "scim-1", "userName": "jane@example.com"}],
-                    },
-                    content_type=scim,
-                )
-            if method == "POST":
-                return self._json(201, {"id": "scim-2", **body}, content_type=scim)
-        match = re.fullmatch(r"/v2/scim/2.0/Users/([^/]+)", path)
-        if match:
-            if method == "GET":
-                return self._json(
-                    200,
-                    {"id": match.group(1), "userName": "jane@example.com"},
-                    content_type=scim,
-                )
-            if method == "PUT":
-                return self._json(
-                    200, {"id": match.group(1), **body}, content_type=scim
-                )
-        return self._json(404, {"detail": "scim not found"}, content_type=scim)
+        if method == "POST":
+            return self._json(
+                201, {"id": "scim-2", **body}, content_type=self._SCIM_CONTENT_TYPE
+            )
+        return None
+
+    def _scim_user_by_id(self, match, method, params, body):
+        if method == "GET":
+            return self._json(
+                200,
+                {"id": match.group(1), "userName": "jane@example.com"},
+                content_type=self._SCIM_CONTENT_TYPE,
+            )
+        if method == "PUT":
+            return self._json(
+                200, {"id": match.group(1), **body}, content_type=self._SCIM_CONTENT_TYPE
+            )
+        return None
+
+    #: Exact-path SCIM routes, checked first (order among these doesn't
+    #: matter — the paths are mutually exclusive).
+    _SCIM_EXACT_ROUTES = (
+        ("/v2/scim/2.0/ServiceProviderConfig", "_scim_service_provider_config"),
+        ("/v2/scim/2.0/ResourceTypes", "_scim_resource_types"),
+        ("/v2/scim/2.0/Schemas", "_scim_schemas"),
+        ("/v2/scim/2.0/Users", "_scim_users"),
+    )
+    #: Pattern-path SCIM routes; each pattern only matches a request that no
+    #: exact route above matches, so relative ordering doesn't matter either.
+    _SCIM_PATTERN_ROUTES = (
+        (r"/v2/scim/2.0/ResourceTypes/([^/]+)", "_scim_resource_type_by_id"),
+        (r"/v2/scim/2.0/Schemas/(.+)", "_scim_schema_by_id"),
+        (r"/v2/scim/2.0/Users/([^/]+)", "_scim_user_by_id"),
+    )
+
+    def _scim_not_found(self):
+        return self._json(
+            404, {"detail": "scim not found"}, content_type=self._SCIM_CONTENT_TYPE
+        )
+
+    def _scim_route(self, path, method, body, params):
+        for route_path, handler_name in self._SCIM_EXACT_ROUTES:
+            if path == route_path:
+                response = getattr(self, handler_name)(None, method, params, body)
+                return response if response is not None else self._scim_not_found()
+        for pattern, handler_name in self._SCIM_PATTERN_ROUTES:
+            match = re.fullmatch(pattern, path)
+            if match:
+                response = getattr(self, handler_name)(match, method, params, body)
+                return response if response is not None else self._scim_not_found()
+        return self._scim_not_found()
 
 
 # --------------------------------------------------------------------------- #
@@ -646,153 +694,181 @@ class MockRegistry:
             actions = "pull,push,delete"
         return f"repository:{repo}:{actions}"
 
-    def _registry_route(self, path, method, request):  # noqa: PLR0911,PLR0912
-        if path == "/v2/" and method == "GET":
-            return self._json(200, {})
+    def _registry_root(self, match, method, request):
+        if method != "GET":
+            return None
+        return self._json(200, {})
 
-        # tags list
-        match = re.fullmatch(r"/v2/(.+)/tags/list", path)
-        if match and method == "GET":
-            return self._json(
-                200, {"name": match.group(1), "tags": ["latest", "1.0", "1.1"]}
-            )
+    def _registry_tags_list(self, match, method, request):
+        if method != "GET":
+            return None
+        return self._json(
+            200, {"name": match.group(1), "tags": ["latest", "1.0", "1.1"]}
+        )
 
-        # manifests (tag or digest)
-        match = re.fullmatch(r"/v2/(.+)/manifests/(.+)", path)
-        if match:
-            reference = match.group(2)
-            if method == "HEAD":
-                return httpx.Response(
-                    200,
-                    headers=self._headers(
-                        {
-                            "Docker-Content-Digest": INDEX_DIGEST,
-                            "Content-Type": MANIFEST_LIST_MEDIA,
-                        }
-                    ),
-                )
-            if method == "GET":
-                if reference == AMD64_DIGEST:
-                    return self._json(
-                        200,
-                        {
-                            "schemaVersion": 2,
-                            "mediaType": IMAGE_MANIFEST_MEDIA,
-                            "config": {
-                                "mediaType": CONFIG_MEDIA,
-                                "digest": CONFIG_DIGEST,
-                                "size": 1234,
-                            },
-                            "layers": [],
-                        },
-                        media=IMAGE_MANIFEST_MEDIA,
-                        extra={"Docker-Content-Digest": AMD64_DIGEST},
-                    )
-                # default: a multi-arch index
-                return self._json(
-                    200,
-                    {
-                        "schemaVersion": 2,
-                        "mediaType": MANIFEST_LIST_MEDIA,
-                        "manifests": [
-                            {
-                                "mediaType": IMAGE_MANIFEST_MEDIA,
-                                "digest": AMD64_DIGEST,
-                                "size": 528,
-                                "platform": {"os": "linux", "architecture": "amd64"},
-                            },
-                            {
-                                "mediaType": IMAGE_MANIFEST_MEDIA,
-                                "digest": "sha256:" + "d" * 64,
-                                "size": 529,
-                                "platform": {"os": "linux", "architecture": "arm64"},
-                            },
-                        ],
-                    },
-                    media=MANIFEST_LIST_MEDIA,
-                    extra={"Docker-Content-Digest": INDEX_DIGEST},
-                )
-            if method == "PUT":
-                return httpx.Response(
-                    201,
-                    headers=self._headers({"Docker-Content-Digest": INDEX_DIGEST}),
-                )
-            if method == "DELETE":
-                return httpx.Response(202, headers=self._headers())
-
-        # blobs
-        match = re.fullmatch(r"/v2/(.+)/blobs/(.+)", path)
-        if match:
-            if method == "GET":
-                return self._json(
-                    200,
-                    {
-                        "architecture": "amd64",
-                        "os": "linux",
-                        "config": {"Env": ["PATH=/usr/bin"], "Labels": {"x": "y"}},
-                        "rootfs": {"type": "layers", "diff_ids": []},
-                        "history": [{"created_by": "RUN echo hi"}],
-                    },
-                    media=CONFIG_MEDIA,
-                )
-            if method == "HEAD":
-                return httpx.Response(200, headers=self._headers())
-            if method == "DELETE":
-                return self._json(405, {"errors": [{"code": "UNSUPPORTED"}]})
-
-        # referrers
-        match = re.fullmatch(r"/v2/(.+)/referrers/(.+)", path)
-        if match and method == "GET":
+    def _registry_manifest_get(self, reference):
+        if reference == AMD64_DIGEST:
             return self._json(
                 200,
                 {
                     "schemaVersion": 2,
-                    "mediaType": "application/vnd.oci.image.index.v1+json",
-                    "manifests": [
-                        {
-                            "mediaType": "application/vnd.oci.image.manifest.v1+json",
-                            "digest": "sha256:" + "e" * 64,
-                            "artifactType": "application/vnd.in-toto+json",
-                        }
-                    ],
+                    "mediaType": IMAGE_MANIFEST_MEDIA,
+                    "config": {
+                        "mediaType": CONFIG_MEDIA,
+                        "digest": CONFIG_DIGEST,
+                        "size": 1234,
+                    },
+                    "layers": [],
                 },
-                media="application/vnd.oci.image.index.v1+json",
+                media=IMAGE_MANIFEST_MEDIA,
+                extra={"Docker-Content-Digest": AMD64_DIGEST},
             )
+        # default: a multi-arch index
+        return self._json(
+            200,
+            {
+                "schemaVersion": 2,
+                "mediaType": MANIFEST_LIST_MEDIA,
+                "manifests": [
+                    {
+                        "mediaType": IMAGE_MANIFEST_MEDIA,
+                        "digest": AMD64_DIGEST,
+                        "size": 528,
+                        "platform": {"os": "linux", "architecture": "amd64"},
+                    },
+                    {
+                        "mediaType": IMAGE_MANIFEST_MEDIA,
+                        "digest": "sha256:" + "d" * 64,
+                        "size": 529,
+                        "platform": {"os": "linux", "architecture": "arm64"},
+                    },
+                ],
+            },
+            media=MANIFEST_LIST_MEDIA,
+            extra={"Docker-Content-Digest": INDEX_DIGEST},
+        )
 
-        # blob upload session
-        match = re.fullmatch(r"/v2/(.+)/blobs/uploads/", path)
-        if match and method == "POST":
-            repo = match.group(1)
-            if "mount" in dict(request.url.params):
-                return httpx.Response(
-                    201,
-                    headers=self._headers(
-                        {"Docker-Content-Digest": dict(request.url.params)["mount"]}
-                    ),
-                )
-            location = f"/v2/{repo}/blobs/uploads/upload-uuid-1"
+    def _registry_manifests(self, match, method, request):
+        reference = match.group(2)
+        if method == "HEAD":
             return httpx.Response(
-                202,
+                200,
                 headers=self._headers(
-                    {"Location": location, "Docker-Upload-UUID": "upload-uuid-1"}
+                    {
+                        "Docker-Content-Digest": INDEX_DIGEST,
+                        "Content-Type": MANIFEST_LIST_MEDIA,
+                    }
                 ),
             )
-        match = re.fullmatch(r"/v2/(.+)/blobs/uploads/(.+)", path)
-        if match:
-            if method == "PATCH":
-                return httpx.Response(
-                    202,
-                    headers=self._headers(
-                        {"Location": path, "Range": "0-1023"}
-                    ),
-                )
-            if method == "PUT":
-                return httpx.Response(
-                    201,
-                    headers=self._headers(
-                        {"Docker-Content-Digest": dict(request.url.params).get("digest", "")}
-                    ),
-                )
+        if method == "GET":
+            return self._registry_manifest_get(reference)
+        if method == "PUT":
+            return httpx.Response(
+                201, headers=self._headers({"Docker-Content-Digest": INDEX_DIGEST})
+            )
+        if method == "DELETE":
+            return httpx.Response(202, headers=self._headers())
+        return None
+
+    def _registry_blobs(self, match, method, request):
+        if method == "GET":
+            return self._json(
+                200,
+                {
+                    "architecture": "amd64",
+                    "os": "linux",
+                    "config": {"Env": ["PATH=/usr/bin"], "Labels": {"x": "y"}},
+                    "rootfs": {"type": "layers", "diff_ids": []},
+                    "history": [{"created_by": "RUN echo hi"}],
+                },
+                media=CONFIG_MEDIA,
+            )
+        if method == "HEAD":
+            return httpx.Response(200, headers=self._headers())
+        if method == "DELETE":
+            return self._json(405, {"errors": [{"code": "UNSUPPORTED"}]})
+        return None
+
+    def _registry_referrers(self, match, method, request):
+        if method != "GET":
+            return None
+        return self._json(
+            200,
+            {
+                "schemaVersion": 2,
+                "mediaType": "application/vnd.oci.image.index.v1+json",
+                "manifests": [
+                    {
+                        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                        "digest": "sha256:" + "e" * 64,
+                        "artifactType": "application/vnd.in-toto+json",
+                    }
+                ],
+            },
+            media="application/vnd.oci.image.index.v1+json",
+        )
+
+    def _registry_blob_upload_session(self, match, method, request):
+        if method != "POST":
+            return None
+        repo = match.group(1)
+        if "mount" in dict(request.url.params):
+            return httpx.Response(
+                201,
+                headers=self._headers(
+                    {"Docker-Content-Digest": dict(request.url.params)["mount"]}
+                ),
+            )
+        location = f"/v2/{repo}/blobs/uploads/upload-uuid-1"
+        return httpx.Response(
+            202,
+            headers=self._headers(
+                {"Location": location, "Docker-Upload-UUID": "upload-uuid-1"}
+            ),
+        )
+
+    def _registry_blob_upload_chunk(self, match, method, request):
+        if method == "PATCH":
+            return httpx.Response(
+                202, headers=self._headers({"Location": match.string, "Range": "0-1023"})
+            )
+        if method == "PUT":
+            return httpx.Response(
+                201,
+                headers=self._headers(
+                    {
+                        "Docker-Content-Digest": dict(request.url.params).get(
+                            "digest", ""
+                        )
+                    }
+                ),
+            )
+        return None
+
+    #: Registry v2 routes, tried in this exact order. A route whose regex
+    #: matches but whose handler declines (returns None, e.g. a method it
+    #: doesn't handle) falls through to the next route — this matters
+    #: because "blobs" and "blobs/uploads/..." regexes overlap, and the
+    #: overlap is resolved by this order + per-handler method filtering,
+    #: not by mutually-exclusive patterns (unlike the SCIM routes above).
+    _REGISTRY_ROUTES = (
+        (r"/v2/", "_registry_root"),
+        (r"/v2/(.+)/tags/list", "_registry_tags_list"),
+        (r"/v2/(.+)/manifests/(.+)", "_registry_manifests"),
+        (r"/v2/(.+)/blobs/(.+)", "_registry_blobs"),
+        (r"/v2/(.+)/referrers/(.+)", "_registry_referrers"),
+        (r"/v2/(.+)/blobs/uploads/", "_registry_blob_upload_session"),
+        (r"/v2/(.+)/blobs/uploads/(.+)", "_registry_blob_upload_chunk"),
+    )
+
+    def _registry_route(self, path, method, request):
+        for pattern, handler_name in self._REGISTRY_ROUTES:
+            match = re.fullmatch(pattern, path)
+            if not match:
+                continue
+            response = getattr(self, handler_name)(match, method, request)
+            if response is not None:
+                return response
         return None
 
 
