@@ -10,7 +10,7 @@ transport/retry/rate-limit/destructive-gating machinery from
 scoped-token request engine on top.
 """
 
-import time
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -20,6 +20,23 @@ from dockerhub_api.api.api_client_base import (
     JSON_CONTENT_TYPE,
     DockerHubApiBase,
 )
+
+
+@dataclass
+class _RegistryRequestSpec:
+    """Everything about a registry request except its endpoint/scope.
+
+    Bundled into one object so the retry engine below stays under the
+    parameter cap instead of threading each field through individually.
+    """
+
+    method: str
+    params: dict | None = None
+    json: Any | None = None
+    content: Any | None = None
+    accept: str | None = None
+    content_type: str | None = None
+    extra_headers: dict[str, str] | None = None
 
 #: ``Accept`` set that asks the registry for any modern manifest media type
 #: (image manifest, manifest list, or OCI image/index). Sending all of these
@@ -144,64 +161,24 @@ class RegistryApiBase(DockerHubApiBase):
         (digest, upload location, range). ``raw_url`` targets an arbitrary URL
         (e.g. an upload ``Location``) while still authorizing against ``repo``.
         """
-        normalized = self._normalize_repo(repo) if repo else None
-        if raw_url is not None:
-            endpoint = raw_url
-            scope = f"repository:{normalized}:{scope_actions}" if normalized else ""
-        elif repo is None:
-            endpoint = "/v2/"
-            scope = ""
-        else:
-            endpoint = f"/v2/{normalized}{suffix}"
-            scope = f"repository:{normalized}:{scope_actions}"
-
+        endpoint, scope = self._resolve_registry_endpoint(
+            repo, suffix, scope_actions, raw_url
+        )
         if params:
             params = {k: v for k, v in params.items() if v is not None}
 
-        attempts = 0
-        rechallenged = False
-        realm: str | None = None
-        service: str | None = None
-        while True:
-            headers = self._registry_headers(
-                scope, realm, service, accept, content_type, extra_headers
-            )
-            response = self._client.request(
-                method=method,
-                url=endpoint,
-                params=params or None,
-                json=json,
-                content=content,
-                headers=headers,
-            )
-            rate_limit = self._capture_rate_limit(response)
-
-            if response.status_code == 429 and attempts < self.max_retries:
-                attempts += 1
-                delay = self._retry_after_seconds(response)
-                if delay > 0:
-                    time.sleep(delay)
-                continue
-
-            if (
-                response.status_code == 401
-                and self._registry_token_manager is not None
-                and not rechallenged
-            ):
-                from dockerhub_api.auth import parse_www_authenticate
-
-                rechallenged = True
-                challenge = parse_www_authenticate(
-                    response.headers.get("WWW-Authenticate", "")
-                )
-                realm = challenge.get("realm") or realm
-                service = challenge.get("service") or service
-                if challenge.get("scope"):
-                    scope = challenge["scope"]
-                self._registry_token_manager.invalidate(scope)
-                continue
-
-            break
+        spec = _RegistryRequestSpec(
+            method=method,
+            params=params,
+            json=json,
+            content=content,
+            accept=accept,
+            content_type=content_type,
+            extra_headers=extra_headers,
+        )
+        response, rate_limit = self._send_registry_request_with_retry(
+            endpoint, scope, spec
+        )
 
         data = self._parse_body(response)
         if raise_for_status and response.status_code >= 400:
@@ -218,6 +195,88 @@ class RegistryApiBase(DockerHubApiBase):
             "rate_limit": rate_limit or dict(self.rate_limit),
             "headers": surfaced,
         }
+
+    @staticmethod
+    def _resolve_registry_endpoint(
+        repo: str | None,
+        suffix: str,
+        scope_actions: str,
+        raw_url: str | None,
+    ) -> tuple[str, str]:
+        """Resolve the request URL and auth scope for a registry call."""
+        normalized = RegistryApiBase._normalize_repo(repo) if repo else None
+        if raw_url is not None:
+            endpoint = raw_url
+            scope = f"repository:{normalized}:{scope_actions}" if normalized else ""
+        elif repo is None:
+            endpoint = "/v2/"
+            scope = ""
+        else:
+            endpoint = f"/v2/{normalized}{suffix}"
+            scope = f"repository:{normalized}:{scope_actions}"
+        return endpoint, scope
+
+    def _should_retry_registry_rate_limit(
+        self, response: httpx.Response, attempts: int
+    ) -> bool:
+        return response.status_code == 429 and attempts < self.max_retries
+
+    def _should_rechallenge_registry_token(
+        self, response: httpx.Response, rechallenged: bool
+    ) -> bool:
+        return (
+            response.status_code == 401
+            and self._registry_token_manager is not None
+            and not rechallenged
+        )
+
+    def _apply_registry_challenge(
+        self, response: httpx.Response, scope: str
+    ) -> tuple[str | None, str | None, str]:
+        """Parse a 401 WWW-Authenticate challenge and invalidate the stale token."""
+        from dockerhub_api.auth import parse_www_authenticate
+
+        challenge = parse_www_authenticate(response.headers.get("WWW-Authenticate", ""))
+        realm = challenge.get("realm")
+        service = challenge.get("service")
+        if challenge.get("scope"):
+            scope = challenge["scope"]
+        self._registry_token_manager.invalidate(scope)
+        return realm, service, scope
+
+    def _send_registry_request_with_retry(
+        self, endpoint: str, scope: str, spec: "_RegistryRequestSpec"
+    ) -> tuple[httpx.Response, dict]:
+        """Send the request, handling 429 backoff and scoped-token rechallenge."""
+        attempts = 0
+        rechallenged = False
+        realm: str | None = None
+        service: str | None = None
+        while True:
+            headers = self._registry_headers(
+                scope, realm, service, spec.accept, spec.content_type, spec.extra_headers
+            )
+            response = self._client.request(
+                method=spec.method,
+                url=endpoint,
+                params=spec.params or None,
+                json=spec.json,
+                content=spec.content,
+                headers=headers,
+            )
+            rate_limit = self._capture_rate_limit(response)
+
+            if self._should_retry_registry_rate_limit(response, attempts):
+                attempts += 1
+                self._wait_before_retry(response, attempts)
+                continue
+
+            if self._should_rechallenge_registry_token(response, rechallenged):
+                rechallenged = True
+                realm, service, scope = self._apply_registry_challenge(response, scope)
+                continue
+
+            return response, rate_limit
 
     def _registry_exists(
         self, repo: str, suffix: str, *, accept: str | None = None
