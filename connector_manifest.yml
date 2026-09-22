@@ -173,7 +173,7 @@ sync:
   updated_field: last_updated
   pagination: page
   doc_type: repository
-  tool_schema_sha256: a8e6df33d3141f5abc1ef47ff4e69267df353bc6d0b9c958fd2d04de12e96b17
+  tool_schema_sha256: d91cd17c9faa3edff4848df783e9e81a0cd2c8e7e4acf30f8a8c3b68485b9a3e
   raw:
     server: dockerhub-mcp
     tool: hub_repos
@@ -184,7 +184,7 @@ sync:
     text_field: description
     updated_field: last_updated
     pagination: page
-    page_kind: page
+    page_kind: number
     page_param: page
     page_size_param: page_size
     doc_type: repository

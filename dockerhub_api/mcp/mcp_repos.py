@@ -3,7 +3,7 @@
 CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface.
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import Context, FastMCP
 from fastmcp.dependencies import Depends
@@ -15,7 +15,19 @@ from dockerhub_api.mcp import get_hub_client, parse_params, redact_secrets, run_
 def register_repos_tools(mcp: FastMCP):
     @mcp.tool(tags={"repositories"})
     async def hub_repos(
-        action: str = Field(
+        action: Literal[
+            "assign_group",
+            "check",
+            "check_tag",
+            "check_tags",
+            "create",
+            "get",
+            "get_tag",
+            "list",
+            "list_tags",
+            "set_immutable_tags",
+            "verify_immutable_tags",
+        ] = Field(
             description=(
                 "Action to perform. Must be one of: 'list', 'create', 'get', "
                 "'check', 'list_tags', 'check_tags', 'get_tag', 'check_tag', "

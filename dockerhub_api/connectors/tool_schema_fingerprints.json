@@ -1,8 +1,8 @@
 {
-  "algorithm": "agent-utilities:mcp-tool-schema-compat:v1",
+  "algorithm": "agent-connector-sdk:mcp-tool-contract-compat:v2",
   "connector": "dockerhub-api",
   "schema_version": "1",
   "tools": {
-    "hub_repos": "a8e6df33d3141f5abc1ef47ff4e69267df353bc6d0b9c958fd2d04de12e96b17"
+    "hub_repos": "d91cd17c9faa3edff4848df783e9e81a0cd2c8e7e4acf30f8a8c3b68485b9a3e"
   }
 }

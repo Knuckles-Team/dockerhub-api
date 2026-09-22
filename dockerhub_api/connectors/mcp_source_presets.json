@@ -10,7 +10,7 @@
     "text_field": "description",
     "updated_field": "last_updated",
     "pagination": "page",
-    "page_kind": "page",
+    "page_kind": "number",
     "page_param": "page",
     "page_size_param": "page_size",
     "doc_type": "repository"
