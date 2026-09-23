@@ -13,7 +13,18 @@ from dockerhub_api.mcp import get_hub_client, parse_params, redact_secrets, run_
 
 
 def register_repos_tools(mcp: FastMCP):
-    @mcp.tool(tags={"repositories"})
+    @mcp.tool(
+        tags={"repositories"},
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+        meta={
+            "eg.annotations": {"modalities_in": ["text"], "modalities_out": ["text"]}
+        },
+    )
     async def hub_repos(
         action: Literal[
             "assign_group",
