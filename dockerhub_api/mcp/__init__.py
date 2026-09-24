@@ -8,7 +8,7 @@ resolution, parameter parsing, secret redaction, and error-envelope helpers.
 import json
 from typing import Any
 
-from agent_utilities.core.exceptions import (
+from agent_connector_sdk.exceptions import (
     ApiError,
     AuthError,
     MissingParameterError,

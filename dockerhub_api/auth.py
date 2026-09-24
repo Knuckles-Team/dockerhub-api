@@ -25,13 +25,11 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from agent_utilities.base_utilities import get_logger
-from agent_utilities.core.config import setting
-from agent_utilities.core.exceptions import AuthError
-from agent_utilities.core.transport_security import (
-    ResolvedTLSProfile,
-    resolve_configured_tls_profile,
-)
+from agent_connector_sdk.utilities import get_logger
+from agent_connector_sdk.config import setting
+from agent_connector_sdk.exceptions import AuthError
+from agent_connector_sdk.tls.profile import ResolvedTLSProfile
+from agent_connector_sdk.tls.resolve import resolve_tls_profile
 
 logger = get_logger(__name__)
 
@@ -150,7 +148,7 @@ class TokenManager:
         self.identifier = identifier
         self._secret = secret
         self.url = url.rstrip("/")
-        self.tls_profile = tls_profile or resolve_configured_tls_profile("dockerhub")
+        self.tls_profile = tls_profile or resolve_tls_profile("dockerhub")
         self.timeout = timeout
         self.refresh_skew = refresh_skew
         self._transport = transport
@@ -248,7 +246,7 @@ class RegistryTokenManager:
         self._secret = secret
         self.realm = realm
         self.service = service
-        self.tls_profile = tls_profile or resolve_configured_tls_profile("dockerhub")
+        self.tls_profile = tls_profile or resolve_tls_profile("dockerhub")
         self.timeout = timeout
         self.refresh_skew = refresh_skew
         self._transport = transport
@@ -311,7 +309,7 @@ def get_token_manager(
     Sharing the manager lets every short-lived client (one per MCP tool call)
     reuse the same cached JWT instead of re-minting on every request.
     """
-    profile = tls_profile or resolve_configured_tls_profile("dockerhub")
+    profile = tls_profile or resolve_tls_profile("dockerhub")
     key = (url.rstrip("/"), identifier)
     with _token_manager_lock:
         manager = _token_managers.get(key)
@@ -334,7 +332,7 @@ def _resolve_tls_profile(
     tls_profile: ResolvedTLSProfile | None,
 ) -> ResolvedTLSProfile:
     """Resolve the shared Docker Hub/registry TLS profile, honouring an override."""
-    return tls_profile or resolve_configured_tls_profile(
+    return tls_profile or resolve_tls_profile(
         "dockerhub",
         profile_name=setting("DOCKERHUB_TLS_PROFILE", "") or None,
         profile_ref=setting("DOCKERHUB_TLS_PROFILE_REF", "") or None,

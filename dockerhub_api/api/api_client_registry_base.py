@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from agent_utilities.core.transport_security import ResolvedTLSProfile
+from agent_connector_sdk.tls.profile import ResolvedTLSProfile
 
 from dockerhub_api.api.api_client_base import (
     JSON_CONTENT_TYPE,
@@ -292,7 +292,7 @@ class RegistryApiBase(DockerHubApiBase):
         return envelope
 
     def _raise_for_status_only(self, repo: str, suffix: str, status_code: int) -> None:
-        from agent_utilities.core.exceptions import (
+        from agent_connector_sdk.exceptions import (
             ApiError,
             AuthError,
             UnauthorizedError,

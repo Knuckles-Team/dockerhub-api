@@ -5,7 +5,7 @@ all sharing the transport/auth/rate-limit plumbing in
 :class:`~dockerhub_api.api.api_client_base.DockerHubApiBase`.
 """
 
-from agent_utilities.base_utilities import get_logger
+from agent_connector_sdk.utilities import get_logger
 
 from dockerhub_api.api.api_client_access_tokens import DockerHubApiAccessTokens
 from dockerhub_api.api.api_client_audit_logs import DockerHubApiAuditLogs

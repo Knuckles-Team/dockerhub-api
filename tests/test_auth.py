@@ -4,7 +4,7 @@ import time
 
 import httpx
 import pytest
-from agent_utilities.core.exceptions import AuthError
+from agent_connector_sdk.exceptions import AuthError
 
 from dockerhub_api.auth import TokenManager, decode_jwt_claims, get_client
 from tests.conftest import BASE_URL, MockHub, make_api, make_jwt

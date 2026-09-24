@@ -14,7 +14,6 @@ CORE_MODULES: list[str] = [
 ]
 
 OPTIONAL_MODULES = {
-    "dockerhub_api.agent_server": "agent",
     "dockerhub_api.mcp_server": "mcp",
 }
 
