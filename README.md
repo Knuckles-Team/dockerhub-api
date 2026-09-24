@@ -67,8 +67,6 @@ multi-arch inspection, OCI referrers, and gated push/delete) and **Docker Scout*
   `DOCKERHUB_ALLOW_DESTRUCTIVE` (default `False`); secrets are redacted from tool
   results (plaintext tokens appear exactly once — on creation). Repository creation
   stays enabled: it is the primary release-provisioning use case.
-- **Integrated Graph Agent:** Built-in Pydantic AI agent (`dockerhub-agent`) with
-  A2A and AG-UI web interfaces.
 - **Native Telemetry & Tracing:** Out-of-the-box OpenTelemetry exports and Langfuse
   tracing via agent-utilities.
 
@@ -79,51 +77,37 @@ multi-arch inspection, OCI referrers, and gated push/delete) and **Docker Scout*
 ```bash
 pip install dockerhub-api            # API client only
 pip install "dockerhub-api[mcp]"     # + MCP server
-pip install "dockerhub-api[agent]"   # + A2A agent server
-pip install "dockerhub-api[all]"     # everything
 ```
 
 | Extra | Adds |
 |---|---|
 | `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-utilities[mcp]` |
-| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-utilities[agent-runtime,logfire]` |
-| `all` | `mcp` + `agent` |
 | `test` | pytest toolchain for development |
 
 ```bash
 # Connector-focused MCP server (includes the shared graph engine)
 uv pip install "dockerhub-api[mcp]"
-
-# Agent runtime (adds model orchestration to the shared graph engine)
-uv pip install "dockerhub-api[agent]"
-
-# Everything (development)
-uv pip install "dockerhub-api[all]"      # or: python -m pip install "dockerhub-api[all]"
 ```
 
-### Container images (`:mcp` vs `:agent`)
+### Container images (`:mcp`)
 
-One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `--target`:
+One `docker/Dockerfile` builds a single slim MCP-server image:
 
-| Image tag | Build target | Contents | Entrypoint |
-|-----------|--------------|----------|------------|
-| `example/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **connector-focused**, includes `epistemic-graph[full]`; no model-orchestration stack | `dockerhub-mcp` |
-| `example/dockerhub-api@sha256:<digest>` | `--target agent` (default) | `dockerhub-api[agent]` — **agent runtime**, model orchestration + `epistemic-graph[full]` | `dockerhub-agent` |
+| Image tag | Contents | Entrypoint |
+|-----------|----------|------------|
+| `example/dockerhub-api:mcp` | `dockerhub-api[mcp]` -- connector-focused, includes `epistemic-graph[full]` | `dockerhub-api` |
 
 ```bash
-docker build --target mcp   -t example/dockerhub-api:mcp    docker/   # connector-focused MCP server
-docker build --target agent -t example/dockerhub-api:agent-local docker/   # agent runtime
+docker build -t example/dockerhub-api:mcp docker/   # connector-focused MCP server
 ```
 
-`docker/mcp.compose.yml` runs the connector-focused `:mcp` server; `docker/agent.compose.yml` runs the
-agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
+`docker/mcp.compose.yml` runs the connector-focused `:mcp` server.
 
 ### Knowledge-graph database (`epistemic-graph`)
 
-Both `[mcp]` and `[agent]` carry the **epistemic-graph** engine through the required
-Agent Utilities core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
-the server connector-focused; `[agent]` additionally enables model orchestration. Local
-deployments can use the bundled engine. For production or shared state, run
+The `[mcp]` extra carries the **epistemic-graph** engine through the required
+Agent Utilities core dependency (`epistemic-graph[full]`); the server stays
+connector-focused. Local deployments can use the bundled engine. For production or shared state, run
 **epistemic-graph as a dedicated database service** and configure the runtime to use it.
 Deployment recipes (single-node + Raft HA), connection configuration, and architecture
 diagrams are documented in the
@@ -437,7 +421,7 @@ to **"deploy `dockerhub-api` with agent-utilities-deployment"**.
 | Install mode | Command |
 |------|---------|
 | Installed package | `uv tool install "dockerhub-api[mcp]"`, then run `dockerhub-mcp` |
-| Editable source | `uv pip install -e ".[agent]"`, then run `dockerhub-mcp` |
+| Editable source | `uv pip install -e ".[mcp]"`, then run `dockerhub-mcp` |
 | Immutable container | deploy `registry.example.invalid/dockerhub-api@sha256:<digest>` through the operator-selected orchestrator |
 
 The repository embeds no deployment profile, credential value, certificate path, or
