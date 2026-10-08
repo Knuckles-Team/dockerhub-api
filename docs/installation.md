@@ -33,7 +33,7 @@ docker run --rm -e DOCKERHUB_USERNAME=youruser -e DOCKERHUB_TOKEN=dckr_pat_xxx \
 
 ## Configuration
 
-Copy `.env.example` to `.env` and fill in your values:
+Copy `.env.example` to `.env` and fill in the operator's values:
 
 | Variable | Default | Purpose |
 |---|---|---|

@@ -65,7 +65,7 @@ entire domain. Modules are individually togglable with `*TOOL` environment flags
 
 ## Safety model
 
-- **Destructive gating** — deletes (tokens, groups, members, invites) and
+- **Destructive gating** — removes (tokens, groups, members, invites) and
   org-settings writes raise `DestructiveOperationError` unless
   `DOCKERHUB_ALLOW_DESTRUCTIVE=True`. Repository creation is allowed by default —
   it is the primary provisioning use case (creating image repos for releases).

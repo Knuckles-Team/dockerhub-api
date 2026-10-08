@@ -1,7 +1,7 @@
 # Usage — API / CLI / MCP
 
 `dockerhub-api` exposes the same capability three ways: as **MCP tools** an agent
-calls, as a **Python API** (`Api`) you import, and as a **CLI** (the `dockerhub-mcp`
+calls, as a **Python API** (`Api`) the operator import, and as a **CLI** (the `dockerhub-mcp`
 and `dockerhub-agent` entry points). The complete action-routed tool surface is
 documented in [Overview](overview.md).
 
@@ -27,7 +27,7 @@ Example agent prompts that map onto these tools:
 - *"Invite jane@example.com and dev2 to the platform team — dry run first"* →
   `hub_org` (`bulk_invite` with `dry_run: true`)
 - *"Show the audit trail for repo deletions last week"* → `hub_audit` (`logs`)
-- *"How close are we to the rate limit?"* → `hub_admin` (`rate_limit`)
+- *"How close are this repository to the rate limit?"* → `hub_admin` (`rate_limit`)
 
 Tool calls take an `action` and a `params_json` object:
 
@@ -70,7 +70,7 @@ print(api.rate_limit)         # {'limit': 180, 'remaining': 173, 'reset': ...}
 print(api.whoami())           # local JWT introspection — no network call
 ```
 
-Or construct it explicitly:
+Or build it explicitly:
 
 ```python
 from dockerhub_api.api_client import Api

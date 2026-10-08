@@ -2,7 +2,7 @@
 
 Unlike most connectors in this fleet, the backing platform is **Docker Hub
 itself** (`https://hub.docker.com`) — a hosted SaaS registry that cannot be
-self-deployed. This page covers what you need on the Docker Hub side.
+self-deployed. This page covers what the operator need on the Docker Hub side.
 
 ## Account & credentials
 
@@ -54,5 +54,5 @@ with a bounded backoff.
 | SCIM 2.0 user provisioning | Business plan + SSO | `hub_scim` |
 | Immutable tags | Docker Hub feature rollout | `hub_repos` (`set_immutable_tags`/`verify_immutable_tags`) |
 
-Calls against features your plan does not include return HTTP 403, which the
+Calls against features the operator's plan does not include return HTTP 403, which the
 connector maps to `UnauthorizedError`.

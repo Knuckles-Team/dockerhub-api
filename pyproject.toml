@@ -81,3 +81,6 @@ include = [ "dockerhub_api*",]
 
 [tool.vulture]
 ignore_names = ["request", "config", "cls", "exc_info"]
+
+[tool.pipelines_hooks.ste]
+exempt = ["specs/*", "specs/**/*"]
