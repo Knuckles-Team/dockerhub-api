@@ -38,6 +38,7 @@ class _RegistryRequestSpec:
     content_type: str | None = None
     extra_headers: dict[str, str] | None = None
 
+
 #: ``Accept`` set that asks the registry for any modern manifest media type
 #: (image manifest, manifest list, or OCI image/index). Sending all of these
 #: lets the registry resolve multi-arch references to the right object.
@@ -254,7 +255,12 @@ class RegistryApiBase(DockerHubApiBase):
         service: str | None = None
         while True:
             headers = self._registry_headers(
-                scope, realm, service, spec.accept, spec.content_type, spec.extra_headers
+                scope,
+                realm,
+                service,
+                spec.accept,
+                spec.content_type,
+                spec.extra_headers,
             )
             response = self._client.request(
                 method=spec.method,

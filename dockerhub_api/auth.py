@@ -357,7 +357,10 @@ class _HubCredentials:
 
 def _resolve_hub_url(url: str | None, config: dict) -> str:
     return str(
-        url or config.get("url") or setting("DOCKERHUB_URL", None) or DEFAULT_DOCKERHUB_URL
+        url
+        or config.get("url")
+        or setting("DOCKERHUB_URL", None)
+        or DEFAULT_DOCKERHUB_URL
     )
 
 

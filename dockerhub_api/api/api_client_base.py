@@ -327,7 +327,9 @@ class DockerHubApiBase:
     def _error_detail(data: Any) -> str:
         if not isinstance(data, dict):
             return ""
-        return str(data.get("detail") or data.get("message") or data.get("errinfo") or "")
+        return str(
+            data.get("detail") or data.get("message") or data.get("errinfo") or ""
+        )
 
     def _rate_limited_message(self, message: str) -> str:
         return (
