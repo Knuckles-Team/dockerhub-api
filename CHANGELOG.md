@@ -34,5 +34,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   type and SCIM-style `startIndex`/`count` pagination.
 - **CONCEPT:HUB-1.6** — A2A agent server (`dockerhub-agent`) over the MCP tool
   surface via agent-utilities `create_agent_server`.
-- Comprehensive mocked-`httpx` test suite (no live Docker Hub calls), Docker
+- Complete mocked-`httpx` test suite (no live Docker Hub calls), Docker
   packaging, MkDocs documentation site, and fleet-standard repo scaffolding.

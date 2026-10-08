@@ -45,7 +45,7 @@ that wraps the official **Docker Hub API v2** (`https://hub.docker.com`): reposi
 and tags, immutable tags, personal and organization access tokens, organization
 members/settings/invites, teams, audit logs, and SCIM 2.0 provisioning — plus the
 **Registry HTTP API v2** (`registry-1.docker.io`: manifests, blobs, digests,
-multi-arch inspection, OCI referrers, and gated push/delete) and **Docker Scout**
+multi-arch inspection, OCI referrers, and gated push/remove) and **Docker Scout**
 (`api.scout.docker.com`: CVE/SBOM/policy intelligence).
 
 ---
@@ -63,7 +63,7 @@ multi-arch inspection, OCI referrers, and gated push/delete) and **Docker Scout*
   expiry, with one transparent re-mint on 401.
 - **Rate-Limit Telemetry:** `X-RateLimit-*` headers surfaced in every result;
   HTTP 429 retried with bounded `Retry-After` backoff.
-- **Safety by Default:** Deletes and org-settings writes are gated behind
+- **Safety by Default:** Removes and org-settings writes are gated behind
   `DOCKERHUB_ALLOW_DESTRUCTIVE` (default `False`); secrets are redacted from tool
   results (plaintext tokens appear exactly once — on creation). Repository creation
   stays enabled: it is the primary release-provisioning use case.
@@ -122,7 +122,7 @@ agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 
 Both `[mcp]` and `[agent]` carry the **epistemic-graph** engine through the required
 Agent Utilities core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
-the server connector-focused; `[agent]` additionally enables model orchestration. Local
+the server connector-focused; `[agent]` also enables model orchestration. Local
 deployments can use the bundled engine. For production or shared state, run
 **epistemic-graph as a dedicated database service** and configure the runtime to use it.
 Deployment recipes (single-node + Raft HA), connection configuration, and architecture
@@ -409,7 +409,7 @@ the detailed transport contract.
 |---|---|---|
 | Reads (repos, tags, members, logs, SCIM) | allowed | — |
 | Repository create / immutable-tag config / invites / role updates | allowed | — |
-| Deletes (PATs, OATs, groups, members, invites) | **blocked** | `DOCKERHUB_ALLOW_DESTRUCTIVE=True` |
+| Removes (PATs, OATs, groups, members, invites) | **blocked** | `DOCKERHUB_ALLOW_DESTRUCTIVE=True` |
 | Org-settings writes (`PUT /v2/orgs/{org}/settings`) | **blocked** | `DOCKERHUB_ALLOW_DESTRUCTIVE=True` |
 
 ---

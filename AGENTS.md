@@ -96,11 +96,11 @@ dockerhub-agent    # dockerhub_api.agent_server:agent_server
 ## Safety & Boundaries
 **Always do:**
 - Run lint/test via `pre-commit`.
-- Keep deletes and org-settings writes behind `allow_destructive`.
+- Keep removes and org-settings writes behind `allow_destructive`.
 
 **Ask first:**
 - Major refactors of `mcp_server.py` or `agent_server.py`.
-- Deleting or renaming public tool functions or client methods.
+- Removing or renaming public tool functions or client methods.
 
 **Never do:**
 - Commit `.env` files or secrets.
@@ -128,18 +128,18 @@ config, docs, lockfiles). The only hidden directories allowed at root are
 `~/workspace/reports/` (command output); tests go in `tests/` (pytest).
 Before finishing a task, run `git status` and confirm no stray root files were added.
 
-## Working Discipline — think, simplify, stay surgical, verify
+## Working Discipline — think, simplify, stay surgical, check
 
-- **Think before coding.** State your assumptions explicitly. If a request has more
+- **Think before coding.** State the operator's assumptions explicitly. If a request has more
   than one reasonable reading, surface the options instead of silently picking one.
 - **Simplicity first.** Write the minimum code that solves the stated problem — no
   speculative features, no abstraction for single-use code. (Name code from its
   purpose, never `wave0`/`phase2`/`v2`.)
 - **Stay surgical.** Every changed line should trace directly to the task. Don't
-  refactor or reformat working code adjacent to your change. *Exception — the
+  refactor or reformat working code adjacent to the operator's change. *Exception — the
   Quality Bar below:* lint/format/type errors the pre-commit gate flags get fixed
-  regardless of who introduced them.
-- **Verify against a goal.** Turn the task into a checkable outcome before you
+  in either case of who introduced them.
+- **Check against a goal.** Turn the task into a checkable outcome before the operator
   start; loop until the checks pass.
 
 ## Quality Bar — Leave the Codebase Clean (REQUIRED)
@@ -152,7 +152,7 @@ pre-commit run --all-files
 ```
 
 Resolve **every** issue it reports — failures, lint errors, type errors, and
-warnings — **including problems that pre-date your change**. Do not silence checks
+warnings — **including problems that pre-date the operator's change**. Do not silence checks
 (`# noqa`, `# type: ignore`, `SKIP=`, `--no-verify`) to force green unless the
 exception is already documented here. Only commit once `pre-commit run
 --all-files` passes cleanly.
@@ -161,7 +161,7 @@ exception is already documented here. Only commit once `pre-commit run
 
 Multiple agents/sessions work the `agent-packages/*` repos concurrently. **Do not
 edit the canonical checkout** (`${WORKSPACE_ROOT}/agent-packages/agents/<repo>`)
-— take your own git worktree on your own branch instead:
+— take the operator's own git worktree on the operator's own branch instead:
 
 ```bash
 rm_worktree add <repo> <your-branch>      # -> ${WORKTREE_ROOT}/<repo>/<your-branch>
@@ -170,7 +170,7 @@ rm_worktree add <repo> <your-branch>      # -> ${WORKTREE_ROOT}/<repo>/<your-bra
 Work in the worktree and **commit often**. Each session must use a **distinct
 branch**. Finishing work: (1) `pre-commit run --all-files` green, (2) commit,
 (3) merge to main locally (`rm_worktree merge` or `git merge --no-ff`), pushing
-only when the user asks, (4) remove the worktree and delete the merged branch.
+only when the user asks, (4) remove the worktree and remove the merged branch.
 
 <!-- BEGIN concept-coordination (generated) -->
 ## Concept-ID Coordination (multi-session)
@@ -194,8 +194,8 @@ is what Dependabot flags. Rules:
 
 1. **Never hand-edit a version string.** Change the version ONLY via
    `bump-my-version bump {patch|minor|major}` (a.k.a. `bump2version`), which rewrites every file
-   registered in `.bumpversion.cfg` in one atomic, tagged commit. If you edited the version in
-   `pyproject.toml` by hand, you created drift — revert and use the bumper.
+   registered in `.bumpversion.cfg` in one atomic, tagged commit. If the operator edited the version in
+   `pyproject.toml` by hand, the operator created drift — revert and use the bumper.
 2. **Every version-bearing file must be registered in `.bumpversion.cfg`** — at minimum
    `pyproject.toml` AND `README.md`, plus `docker/Dockerfile` and any module `__version__`. Never
    add a file that embeds the version without a `[bumpversion:file:...]` entry for it.
@@ -208,7 +208,7 @@ is what Dependabot flags. Rules:
 
 ## Upstream currency edict — target the newest release; a pin is a hypothesis, not a fact (READ BEFORE capping, deferring, or opt-in-gating an upgrade)
 
-This governs how we treat **other people's** releases, deprecations, and version caps in
+This governs how this repository treat **other people's** releases, deprecations, and version caps in
 this repo (fleet-wide edict, propagated from `agent-utilities/AGENTS.md`).
 
 1. **Latest by default.** Target the newest upstream release -- including a pre-release
@@ -227,10 +227,10 @@ this repo (fleet-wide edict, propagated from `agent-utilities/AGENTS.md`).
    -- never an indefinite pin.
 4. **Deprecations are fixed on sight, in code AND in tests.** A `DeprecationWarning` from
    an upstream library is a defect to fix now, not noise to filter. **Never** silence one
-   with a warning filter, `# noqa`, or a pytest `filterwarnings` entry in order to go
+   with a warning filter, `# noqa`, or a pytest `filterwarnings` entry to go
    green.
 5. **Adopt upstream features rather than reimplementing them.** If upstream ships a
-   capability this repo hand-rolled, migrate to theirs and delete the local one.
+   capability this repo hand-rolled, migrate to theirs and remove the local one.
 6. **Nothing built on an upgrade ships opt-in.** A new capability an upgrade unlocks is
    default-on unless it genuinely costs compute, in which case it is policy-selected,
    never flag-gated. An opt-in extra or a dependency-conflict fork is an interim state
