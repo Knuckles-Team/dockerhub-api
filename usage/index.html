@@ -846,7 +846,7 @@
 
 <h1 id="usage-api-cli-mcp">Usage — API / CLI / MCP<a class="headerlink" href="#usage-api-cli-mcp" title="Permanent link">&para;</a></h1>
 <p><code>dockerhub-api</code> exposes the same capability three ways: as <strong>MCP tools</strong> an agent
-calls, as a <strong>Python API</strong> (<code>Api</code>) you import, and as a <strong>CLI</strong> (the <code>dockerhub-mcp</code>
+calls, as a <strong>Python API</strong> (<code>Api</code>) the operator import, and as a <strong>CLI</strong> (the <code>dockerhub-mcp</code>
 and <code>dockerhub-agent</code> entry points). The complete action-routed tool surface is
 documented in <a href="../overview/">Overview</a>.</p>
 <h2 id="as-an-mcp-server">As an MCP server<a class="headerlink" href="#as-an-mcp-server" title="Permanent link">&para;</a></h2>
@@ -888,7 +888,7 @@ flag:</p>
 <li><em>"Invite jane@example.com and dev2 to the platform team — dry run first"</em> →
   <code>hub_org</code> (<code>bulk_invite</code> with <code>dry_run: true</code>)</li>
 <li><em>"Show the audit trail for repo deletions last week"</em> → <code>hub_audit</code> (<code>logs</code>)</li>
-<li><em>"How close are we to the rate limit?"</em> → <code>hub_admin</code> (<code>rate_limit</code>)</li>
+<li><em>"How close are this repository to the rate limit?"</em> → <code>hub_admin</code> (<code>rate_limit</code>)</li>
 </ul>
 <p>Tool calls take an <code>action</code> and a <code>params_json</code> object:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
@@ -924,7 +924,7 @@ flag:</p>
 </span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">rate_limit</span><span class="p">)</span>         <span class="c1"># {'limit': 180, 'remaining': 173, 'reset': ...}</span>
 </span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">whoami</span><span class="p">())</span>           <span class="c1"># local JWT introspection — no network call</span>
 </span></code></pre></div>
-<p>Or construct it explicitly:</p>
+<p>Or build it explicitly:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dockerhub_api.api_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">Api</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">api</span> <span class="o">=</span> <span class="n">Api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">"https://hub.docker.com"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"youruser"</span><span class="p">,</span>

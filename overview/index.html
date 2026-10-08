@@ -991,7 +991,7 @@ entire domain. Modules are individually togglable with <code>*TOOL</code> enviro
 </table>
 <h2 id="safety-model">Safety model<a class="headerlink" href="#safety-model" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Destructive gating</strong> — deletes (tokens, groups, members, invites) and
+<li><strong>Destructive gating</strong> — removes (tokens, groups, members, invites) and
   org-settings writes raise <code>DestructiveOperationError</code> unless
   <code>DOCKERHUB_ALLOW_DESTRUCTIVE=True</code>. Repository creation is allowed by default —
   it is the primary provisioning use case (creating image repos for releases).</li>

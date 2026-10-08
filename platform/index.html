@@ -835,7 +835,7 @@
 <h1 id="backing-platform-docker-hub">Backing Platform (Docker Hub)<a class="headerlink" href="#backing-platform-docker-hub" title="Permanent link">&para;</a></h1>
 <p>Unlike most connectors in this fleet, the backing platform is <strong>Docker Hub
 itself</strong> (<code>https://hub.docker.com</code>) — a hosted SaaS registry that cannot be
-self-deployed. This page covers what you need on the Docker Hub side.</p>
+self-deployed. This page covers what the operator need on the Docker Hub side.</p>
 <h2 id="account-credentials">Account &amp; credentials<a class="headerlink" href="#account-credentials" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Create a Docker Hub account (or use an organization-owned service account).</li>
@@ -912,7 +912,7 @@ with a bounded backoff.</p>
 </tr>
 </tbody>
 </table>
-<p>Calls against features your plan does not include return HTTP 403, which the
+<p>Calls against features the operator's plan does not include return HTTP 403, which the
 connector maps to <code>UnauthorizedError</code>.</p>
 
 
