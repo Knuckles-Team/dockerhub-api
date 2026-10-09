@@ -82,5 +82,5 @@ def register_kg_tools(mcp: FastMCP):
         if include_tags:
             _enrich_repos_with_tags(client, namespace, repos)
 
-        result = ingest_repositories(repos, namespace=namespace)
+        result = await ingest_repositories(repos, namespace=namespace)
         return {"listed": len(repos), "ingested": result}

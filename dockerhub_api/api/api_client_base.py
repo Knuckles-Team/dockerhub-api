@@ -19,19 +19,16 @@ import time
 from typing import Any
 
 import httpx
-from agent_utilities.base_utilities import get_logger
-from agent_utilities.core.exceptions import (
+from agent_connector_sdk.exceptions import (
     ApiError,
     AuthError,
     ParameterError,
     UnauthorizedError,
 )
-from agent_utilities.core.transport_security import (
-    ResolvedTLSProfile,
-    resolve_configured_tls_profile,
-)
+from agent_connector_sdk.tls.profile import ResolvedTLSProfile
+from agent_connector_sdk.tls.resolve import resolve_tls_profile
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 JSON_CONTENT_TYPE = "application/json"
 SCIM_CONTENT_TYPE = "application/scim+json"
@@ -74,7 +71,7 @@ class DockerHubApiBase:
         from dockerhub_api.auth import DEFAULT_DOCKERHUB_URL, TokenManager
 
         self.url = (url or DEFAULT_DOCKERHUB_URL).rstrip("/")
-        self.tls_profile = tls_profile or resolve_configured_tls_profile("dockerhub")
+        self.tls_profile = tls_profile or resolve_tls_profile("dockerhub")
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_after_cap = retry_after_cap
