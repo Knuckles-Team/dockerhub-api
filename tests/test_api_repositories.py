@@ -3,7 +3,7 @@
 import json
 
 import pytest
-from agent_utilities.core.exceptions import ParameterError
+from agent_connector_sdk.exceptions import ParameterError
 
 from dockerhub_api.dockerhub_input_models import RepositoryCreateModel
 

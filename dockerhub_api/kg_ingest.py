@@ -5,65 +5,112 @@ pushes its data into the ONE epistemic-graph knowledge graph as **typed OWL node
 (``:Repository``, ``:ContainerImage``, ``:Namespace``, …) + links, matching the classes
 federated by ``dockerhub_api.ontology``.
 
-This is a thin mapper over the required
-``agent_utilities.knowledge_graph.memory.native_ingest`` authority. Node ids follow
-``dockerhub:<class>:<externalId>``; ``node_type`` on each entity matches a class in
-``dockerhub.ttl``.
+This is a thin mapper over ``agent_connector_sdk.ingest`` -- the generated ``SourceIngest``
+client, not a local ingestion helper. Node ids follow ``dockerhub:<class>:<externalId>``;
+``node_type`` on each entity matches a class in ``dockerhub.ttl``.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from agent_utilities.knowledge_graph.memory.native_ingest import (
-    ingest_documents as _native_ingest_documents,
+from agent_connector_sdk.ingest import (
+    ChangeSet,
+    Document,
+    Entity,
+    IngestBinding,
+    IngestError,
+    KnowledgeIngest,
+    Relationship,
+    current_ingest,
 )
-from agent_utilities.knowledge_graph.memory.native_ingest import (
-    ingest_entities as _native_ingest_entities,
-)
 
-_SOURCE = "dockerhub-api"
-_DOMAIN = "dockerhub"
+_BINDING = IngestBinding(connector="dockerhub-api", stream="dockerhub")
+
+_ENTITY_RESERVED_KEYS = frozenset({"id", "node_type"})
+_RELATIONSHIP_RESERVED_KEYS = frozenset({"source", "target", "relationship"})
+_DOCUMENT_RESERVED_KEYS = frozenset({"id", "text", "title", "source_uri"})
 
 
-def ingest_entities(
-    entities: list[dict[str, Any]],
-    relationships: list[dict[str, Any]] | None = None,
-    *,
-    source: str = _SOURCE,
-    domain: str = _DOMAIN,
-    client: Any | None = None,
-    graph: str | None = None,
-) -> dict[str, int]:
-    """Write typed OWL nodes (+ edges) into epistemic-graph.
-
-    Uses canonical ``node_type`` / ``relationship`` structural fields.
-    """
-    return _native_ingest_entities(
-        entities,
-        relationships,
-        source=source,
-        domain=domain,
-        client=client,
-        graph=graph,
+def _to_entity(record: dict[str, Any]) -> Entity:
+    return Entity(
+        id=record.get("id"),
+        node_type=record.get("node_type"),
+        properties={
+            key: value
+            for key, value in record.items()
+            if key not in _ENTITY_RESERVED_KEYS
+        },
     )
 
 
-def ingest_documents(
+def _to_relationship(record: dict[str, Any]) -> Relationship:
+    properties = {
+        key: value
+        for key, value in record.items()
+        if key not in _RELATIONSHIP_RESERVED_KEYS
+    }
+    return Relationship(
+        source=record["source"],
+        target=record["target"],
+        relationship=record["relationship"],
+        properties=properties or None,
+    )
+
+
+async def ingest_entities(
+    entities: list[dict[str, Any]],
+    relationships: list[dict[str, Any]] | None = None,
+    *,
+    ingest: KnowledgeIngest | None = None,
+) -> dict[str, int]:
+    """Write typed OWL nodes (+ edges) into epistemic-graph via the SDK ingest facade.
+
+    Uses canonical ``node_type`` / ``relationship`` structural fields.
+    """
+    if not entities:
+        raise IngestError("ingest_entities needs at least one entity")
+    change_set = ChangeSet(
+        entities=tuple(_to_entity(entity) for entity in entities),
+        relationships=tuple(
+            _to_relationship(relationship) for relationship in relationships or ()
+        ),
+    )
+    service = ingest or current_ingest()
+    receipt = await service.submit(_BINDING, change_set)
+    return {"nodes": receipt.affected_count, "edges": receipt.relationship_count}
+
+
+async def ingest_documents(
     docs: list[dict[str, Any]],
     *,
-    source: str = _SOURCE,
-    domain: str = _DOMAIN,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
     """Write text records as ``:Document`` nodes (semantic-search fodder).
 
     Each doc: ``{"id":..., "text":..., "title"?:..., "source_uri"?:...}``.
     """
-    return _native_ingest_documents(
-        docs, source=source, domain=domain, client=client, graph=graph
+    if not docs:
+        raise IngestError("ingest_documents needs at least one document")
+    change_set = ChangeSet(
+        documents=tuple(
+            Document(
+                id=doc["id"],
+                text=doc["text"],
+                title=doc.get("title"),
+                source_uri=doc.get("source_uri"),
+                properties={
+                    key: value
+                    for key, value in doc.items()
+                    if key not in _DOCUMENT_RESERVED_KEYS
+                },
+            )
+            for doc in docs
+        )
     )
+    service = ingest or current_ingest()
+    receipt = await service.submit(_BINDING, change_set)
+    return {"nodes": receipt.affected_count, "edges": receipt.relationship_count}
 
 
 def _image_entities(
@@ -106,12 +153,11 @@ def _image_entities(
     return entities, relationships
 
 
-def ingest_repositories(
+async def ingest_repositories(
     repositories: list[dict[str, Any]],
     *,
     namespace: str | None = None,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
     """Map Docker Hub repository records → ``:Repository`` (+ ``:Namespace``) nodes.
 
@@ -154,22 +200,21 @@ def ingest_repositories(
         )
         entities.extend(img_entities)
         relationships.extend(img_rels)
-    return ingest_entities(entities, relationships, client=client, graph=graph)
+    return await ingest_entities(entities, relationships, ingest=ingest)
 
 
-def ingest_tags(
+async def ingest_tags(
     namespace: str,
     repository: str,
     tags: list[dict[str, Any]],
     *,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
     """Map a repository's tags → ``:ContainerImage`` nodes linked to their ``:Repository``."""
     repo_id = f"dockerhub:repository:{namespace}/{repository}"
     entities, relationships = _image_entities(repo_id, namespace, repository, tags)
     if not entities:
-        return ingest_entities([], client=client, graph=graph)
+        return await ingest_entities([], ingest=ingest)
     # Ensure the repository anchor exists so :imageOf resolves.
     entities.append(
         {
@@ -180,4 +225,4 @@ def ingest_tags(
             "externalToolId": f"{namespace}/{repository}",
         }
     )
-    return ingest_entities(entities, relationships, client=client, graph=graph)
+    return await ingest_entities(entities, relationships, ingest=ingest)

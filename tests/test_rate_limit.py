@@ -2,7 +2,7 @@
 
 import httpx
 import pytest
-from agent_utilities.core.exceptions import (
+from agent_connector_sdk.exceptions import (
     ApiError,
     AuthError,
     ParameterError,

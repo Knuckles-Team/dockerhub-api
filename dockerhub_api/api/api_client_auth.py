@@ -69,7 +69,7 @@ class DockerHubApiAuth(DockerHubApiBase):
         return envelope
 
     def _raise_for_status_envelope(self, envelope: dict[str, Any]) -> None:
-        from agent_utilities.core.exceptions import ApiError, AuthError
+        from agent_connector_sdk.exceptions import ApiError, AuthError
 
         status_code = envelope["status_code"]
         detail = ""
