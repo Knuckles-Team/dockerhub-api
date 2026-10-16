@@ -93,7 +93,8 @@ async def test_invalid_params_json_is_reported(mcp_instance):
             "hub_repos", {"action": "list", "params_json": "{not json"}
         )
     payload = tool_payload(result)
-    assert "Invalid params_json" in str(payload["error"])
+    # The SDK action dispatcher never echoes caller input back in an error.
+    assert payload["error"] == "Operation failed"
 
 
 async def test_destructive_action_blocked_via_mcp(mcp_instance):

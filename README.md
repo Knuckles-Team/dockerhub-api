@@ -70,7 +70,7 @@ multi-arch inspection, OCI referrers, and gated push/remove) and **Docker Scout*
 - **Integrated Graph Agent:** Built-in Pydantic AI agent (`dockerhub-agent`) with
   A2A and AG-UI web interfaces.
 - **Native Telemetry & Tracing:** Out-of-the-box OpenTelemetry exports and Langfuse
-  tracing via agent-utilities.
+  tracing via agent-connector-sdk.
 
 ---
 
@@ -85,8 +85,8 @@ pip install "dockerhub-api[all]"     # everything
 
 | Extra | Adds |
 |---|---|
-| `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-utilities[mcp]` |
-| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-utilities[agent-runtime,logfire]` |
+| `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-connector-sdk` |
+| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-connector-sdk` |
 | `all` | `mcp` + `agent` |
 | `test` | pytest toolchain for development |
 
@@ -121,7 +121,7 @@ agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 ### Knowledge-graph database (`epistemic-graph`)
 
 Both `[mcp]` and `[agent]` carry the **epistemic-graph** engine through the required
-Agent Utilities core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
+Agent Connector SDK core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
 the server connector-focused; `[agent]` also enables model orchestration. Local
 deployments can use the bundled engine. For production or shared state, run
 **epistemic-graph as a dedicated database service** and configure the runtime to use it.
@@ -244,7 +244,7 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
 <!-- MCP-CONFIG-EXAMPLES:START -->
 
 > **Install the connector-focused `[mcp]` extra.** Examples use `dockerhub-api[mcp]` to add
-> FastMCP / FastAPI through `agent-utilities[mcp]`; the required Agent Utilities core
+> FastMCP / FastAPI through `agent-connector-sdk`; the required Agent Connector SDK core
 > still carries `epistemic-graph[full]`. The `[agent-runtime]` extra additionally
 > enables model orchestration.
 
@@ -424,27 +424,6 @@ The concept registry (`CONCEPT:DH-OS.governance.hub-x`) is documented in
 MIT — see [LICENSE](LICENSE).
 
 
-<!-- BEGIN agent-utilities-deployment (generated; do not edit between markers) -->
-
-## Deploy with `agent-utilities-deployment`
-
-Provision this package with the consolidated **`agent-utilities-deployment`**
-workflow. It selects an installed-package, editable-source, or immutable-container
-path; records only runtime secret and TLS-profile references in `AgentConfig`; and
-runs doctor, registration, policy, observability, and rollback gates. Ask your agent
-to **"deploy `dockerhub-api` with agent-utilities-deployment"**.
-
-| Install mode | Command |
-|------|---------|
-| Installed package | `uv tool install "dockerhub-api[mcp]"`, then run `dockerhub-mcp` |
-| Editable source | `uv pip install -e ".[agent]"`, then run `dockerhub-mcp` |
-| Immutable container | deploy `registry.example.invalid/dockerhub-api@sha256:<digest>` through the operator-selected orchestrator |
-
-The repository embeds no deployment profile, credential value, certificate path, or
-environment-specific endpoint. Supply those at runtime through `AgentConfig` and the
-configured secret provider.
-
-<!-- END agent-utilities-deployment -->
 
 <!-- GOVERNED-CAPABILITY:START -->
 ## Governed capability contract
@@ -507,7 +486,7 @@ network transport, connector ingestion, GraphOS delegation, or trace export.
 | `SCOUTTOOL` | `True` |  |
 | `KGTOOL` | `True` |  |
 
-#### Inherited agent-utilities variables (apply to every connector)
+#### Inherited agent-connector-sdk variables (apply to every connector)
 
 | Variable | Example | Description |
 |----------|---------|-------------|
@@ -528,5 +507,5 @@ network transport, connector ingestion, GraphOS delegation, or trace export.
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-connector-sdk set — do not edit._
 <!-- ENV-VARS-TABLE:END -->

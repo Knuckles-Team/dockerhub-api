@@ -14,7 +14,6 @@ CORE_MODULES: list[str] = [
 ]
 
 OPTIONAL_MODULES = {
-    "dockerhub_api.agent_server": "agent",
     "dockerhub_api.mcp_server": "mcp",
 }
 
@@ -50,7 +49,6 @@ def _import_module_safely(module_name: str):
 
 _AVAILABILITY_FLAG_MARKERS = {
     "_MCP_AVAILABLE": "mcp_server",
-    "_AGENT_AVAILABLE": "agent_server",
 }
 _NOT_AN_AVAILABILITY_FLAG = object()
 _NAME_NOT_FOUND = object()

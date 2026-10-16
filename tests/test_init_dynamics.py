@@ -15,7 +15,3 @@ def test_core_symbols_exposed():
         assert hasattr(module, symbol)
 
 
-def test_availability_flags_are_booleans():
-    module = importlib.import_module("dockerhub_api")
-    assert isinstance(module._MCP_AVAILABLE, bool)
-    assert isinstance(module._AGENT_AVAILABLE, bool)

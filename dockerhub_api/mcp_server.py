@@ -3,7 +3,7 @@
 
 CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface. Registers the consolidated,
 togglable tool modules (hub_auth, hub_repos, hub_org, hub_teams, hub_audit,
-hub_scim, hub_admin, hub_registry, hub_scout) on an agent-utilities FastMCP
+hub_scim, hub_admin, hub_registry, hub_scout) on an agent-connector-sdk FastMCP
 server.
 """
 
