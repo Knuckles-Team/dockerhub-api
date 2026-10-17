@@ -25,7 +25,6 @@ tools and an optional Pydantic-AI agent server. It provides:
 - **Action-routed MCP tools** — seven consolidated, togglable tool modules
   (`hub_auth`, `hub_repos`, `hub_org`, `hub_teams`, `hub_audit`, `hub_scim`,
   `hub_admin`) that minimize token overhead in LLM contexts.
-- **An A2A agent server** — a Pydantic-AI graph agent (console script
   `dockerhub-agent`) that calls the MCP tool surface and exposes an AG-UI web
   interface.
 

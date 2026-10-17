@@ -14,7 +14,6 @@
     - `dockerhub_api/auth.py` — `TokenManager` (JWT mint/cache/refresh) + `get_client`.
     - `dockerhub_api/mcp/` — one action-routed tool module per domain.
     - `dockerhub_api/mcp_server.py` — MCP server entry point and tool registration.
-    - `dockerhub_api/agent_server.py` — Pydantic AI A2A agent server.
 
 ### Architecture Diagram
 ```mermaid
@@ -58,7 +57,6 @@ python -m pytest tests -q
 
 # Execution entry points
 dockerhub-mcp      # dockerhub_api.mcp_server:mcp_server
-dockerhub-agent    # dockerhub_api.agent_server:agent_server
 ```
 
 ## Project Structure Quick Reference

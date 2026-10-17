@@ -10,7 +10,6 @@
    from per-domain mixins.
 2. **MCP server** — `dockerhub-mcp`, exposing seven consolidated, action-routed
    tools.
-3. **A2A agent server** — `dockerhub-agent`, a Pydantic-AI graph agent over the
    MCP tool surface.
 
 ## Architecture

@@ -1,5 +1,5 @@
 # Dockerhub Api
-## CLI or API | MCP | Agent
+## CLI or API | MCP
 
 ![PyPI - Version](https://img.shields.io/pypi/v/dockerhub-api)
 ![MCP Server](https://badge.mcpx.dev?type=server 'MCP Server')
@@ -16,7 +16,6 @@
 *Version: 1.1.0*
 
 > **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
-> interfaces, the integrated A2A agent server, and guidance on the backing
 > Docker Hub platform are maintained in [docs/](docs/index.md).
 
 ---
@@ -79,7 +78,6 @@ multi-arch inspection, OCI referrers, and gated push/remove) and **Docker Scout*
 ```bash
 pip install dockerhub-api            # API client only
 pip install "dockerhub-api[mcp]"     # + MCP server
-pip install "dockerhub-api[agent]"   # + A2A agent server
 pip install "dockerhub-api[all]"     # everything
 ```
 
@@ -95,34 +93,28 @@ pip install "dockerhub-api[all]"     # everything
 uv pip install "dockerhub-api[mcp]"
 
 # Agent runtime (adds model orchestration to the shared graph engine)
-uv pip install "dockerhub-api[agent]"
 
 # Everything (development)
 uv pip install "dockerhub-api[all]"      # or: python -m pip install "dockerhub-api[all]"
 ```
 
-### Container images (`:mcp` vs `:agent`)
+### Container images (`:mcp`)
 
-One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `--target`:
+One multi-stage `docker/Dockerfile` builds the MCP-only image (`--target mcp`):
 
 | Image tag | Build target | Contents | Entrypoint |
 |-----------|--------------|----------|------------|
 | `example/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **connector-focused**, includes `epistemic-graph[full]`; no model-orchestration stack | `dockerhub-mcp` |
-| `example/dockerhub-api@sha256:<digest>` | `--target agent` (default) | `dockerhub-api[agent]` — **agent runtime**, model orchestration + `epistemic-graph[full]` | `dockerhub-agent` |
 
 ```bash
 docker build --target mcp   -t example/dockerhub-api:mcp    docker/   # connector-focused MCP server
-docker build --target agent -t example/dockerhub-api:agent-local docker/   # agent runtime
 ```
 
-`docker/mcp.compose.yml` runs the connector-focused `:mcp` server; `docker/agent.compose.yml` runs the
 agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 
 ### Knowledge-graph database (`epistemic-graph`)
 
-Both `[mcp]` and `[agent]` carry the **epistemic-graph** engine through the required
 Agent Connector SDK core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
-the server connector-focused; `[agent]` also enables model orchestration. Local
 deployments can use the bundled engine. For production or shared state, run
 **epistemic-graph as a dedicated database service** and configure the runtime to use it.
 Deployment recipes (single-node + Raft HA), connection configuration, and architecture

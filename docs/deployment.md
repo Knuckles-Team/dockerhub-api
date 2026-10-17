@@ -83,7 +83,6 @@ docker compose -f docker/mcp.compose.yml up -d
 ## Docker Compose — MCP + A2A agent
 
 ```bash
-docker compose -f docker/agent.compose.yml up -d
 ```
 
 This starts:
