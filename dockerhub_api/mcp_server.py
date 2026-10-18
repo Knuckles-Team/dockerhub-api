@@ -25,9 +25,14 @@ from agent_connector_sdk.mcp.server import create_mcp_server
 from agent_connector_sdk.mcp.tool_surface import register_tool_surface
 from fastmcp.utilities.logging import get_logger
 
+from dockerhub_api.api.api_client_registry import RegistryApi
+from dockerhub_api.api.api_client_scout import ScoutApi
 from dockerhub_api.api_client import Api
-from dockerhub_api.auth import get_client
 from dockerhub_api.mcp import (
+    get_hub_client,
+    get_registry_client,
+    get_scout_client,
+    redact_secrets,
     register_admin_tools,  # noqa: F401
     register_audit_tools,  # noqa: F401
     register_auth_tools,  # noqa: F401
@@ -40,7 +45,7 @@ from dockerhub_api.mcp import (
     register_teams_tools,  # noqa: F401
 )
 
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 print(f"Docker Hub MCP v{__version__}", file=sys.stderr)
 
 logger = get_logger(name="mcp_server")
@@ -69,9 +74,22 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
     registered_tags = register_tool_surface(
         mcp,
         client_cls=Api,
-        get_client=get_client,
+        get_client=get_hub_client,
         service="dockerhub-api",
         tools_module=sys.modules[__name__],
+        verbose_targets=[
+            {
+                "client_cls": RegistryApi,
+                "get_client": get_registry_client,
+                "prefix": "dockerhub_registry",
+            },
+            {
+                "client_cls": ScoutApi,
+                "get_client": get_scout_client,
+                "prefix": "dockerhub_scout",
+            },
+        ],
+        result_coercer=redact_secrets,
     )
 
     for mw in middlewares:

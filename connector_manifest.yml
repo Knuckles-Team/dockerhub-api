@@ -164,8 +164,8 @@ schema_mappings:
 sync:
 - preset: dockerhub-repositories
   server: dockerhub-mcp
-  tool: hub_repos
-  action: list
+  tool: dockerhub_get_repositories
+  action: null
   records_path: data.results
   id_field: name
   title_field: name
@@ -173,18 +173,17 @@ sync:
   updated_field: last_updated
   pagination: page
   doc_type: repository
-  tool_schema_sha256: a8e6df33d3141f5abc1ef47ff4e69267df353bc6d0b9c958fd2d04de12e96b17
+  tool_schema_sha256: c6fb6018860f39159633a23ca0b19a3555daa371598111e280e753ef80ca0595
   raw:
     server: dockerhub-mcp
-    tool: hub_repos
-    action: list
+    tool: dockerhub_get_repositories
     records_path: data.results
     id_field: name
     title_field: name
     text_field: description
     updated_field: last_updated
     pagination: page
-    page_kind: page
+    page_kind: number
     page_param: page
     page_size_param: page_size
     doc_type: repository

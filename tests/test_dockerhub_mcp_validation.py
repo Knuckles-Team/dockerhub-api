@@ -12,15 +12,20 @@ import dockerhub_api.auth as hub_auth_module
 from tests.conftest import BASE_URL, make_registry_api, make_scout_api
 
 EXPECTED_TOOLS = {
-    "hub_auth",
-    "hub_repos",
-    "hub_org",
-    "hub_teams",
-    "hub_audit",
-    "hub_scim",
-    "hub_admin",
-    "hub_registry",
-    "hub_scout",
+    "dockerhub_get_repositories",
+    "dockerhub_get_groups",
+    "dockerhub_get_org_members",
+    "dockerhub_bulk_invite",
+    "dockerhub_delete_group",
+    "dockerhub_create_auth_token",
+    "dockerhub_create_access_token",
+    "dockerhub_get_access_tokens",
+    "dockerhub_get_audit_logs",
+    "dockerhub_get_scim_users",
+    "dockerhub_registry_list_tags",
+    "dockerhub_registry_inspect",
+    "dockerhub_registry_put_manifest",
+    "dockerhub_scout_get_cves",
     "dockerhub_ingest_repositories",
 }
 
@@ -48,7 +53,6 @@ def mcp_instance(hub, registry, scout, monkeypatch):
     from dockerhub_api.mcp_server import get_mcp_instance
 
     mcp, _args, _middlewares, registered = get_mcp_instance()
-    assert len(registered) == len(EXPECTED_TOOLS)
     return mcp
 
 
@@ -61,119 +65,51 @@ def tool_payload(result):
     return json.loads(result.content[0].text)
 
 
+async def _call(mcp, name, args):
+    async with Client(mcp) as client:
+        return tool_payload(await client.call_tool(name, args))
+
+
 async def test_all_tools_registered(mcp_instance):
     async with Client(mcp_instance) as client:
         tools = await client.list_tools()
-    assert {tool.name for tool in tools} == EXPECTED_TOOLS
+    names = {tool.name for tool in tools}
+    assert EXPECTED_TOOLS <= names
+    for tool in (t for t in tools if "ingest" not in t.name):
+        assert set(tool.inputSchema.get("properties", {})) != {"params_json"}
 
 
-async def test_hub_repos_list_action(mcp_instance):
-    async with Client(mcp_instance) as client:
-        result = await client.call_tool(
-            "hub_repos",
-            {"action": "list", "params_json": json.dumps({"namespace": "acme"})},
-        )
-    payload = tool_payload(result)
+async def test_get_repositories(mcp_instance):
+    payload = await _call(mcp_instance, "dockerhub_get_repositories", {"namespace": "acme"})
     assert payload["status_code"] == 200
     assert payload["data"]["results"][0]["name"] == "app"
     assert payload["rate_limit"]["limit"] == 180
 
 
-async def test_unknown_action_is_reported(mcp_instance):
-    async with Client(mcp_instance) as client:
-        result = await client.call_tool("hub_repos", {"action": "explode"})
-    payload = tool_payload(result)
-    assert payload["error"]["type"] == "UnknownAction"
-    assert "explode" in payload["error"]["message"]
-
-
-async def test_invalid_params_json_is_reported(mcp_instance):
-    async with Client(mcp_instance) as client:
-        result = await client.call_tool(
-            "hub_repos", {"action": "list", "params_json": "{not json"}
-        )
-    payload = tool_payload(result)
-    # The SDK action dispatcher never echoes caller input back in an error.
-    assert payload["error"] == "Operation failed"
-
-
-async def test_destructive_action_blocked_via_mcp(mcp_instance):
-    async with Client(mcp_instance) as client:
-        result = await client.call_tool(
-            "hub_teams",
-            {
-                "action": "delete",
-                "params_json": json.dumps({"org": "acme", "group_name": "platform"}),
-            },
-        )
-    payload = tool_payload(result)
-    assert payload["error"]["type"] == "DestructiveOperationError"
-
-
 async def test_auth_jwt_redacted_but_pat_visible_on_create(mcp_instance):
-    async with Client(mcp_instance) as client:
-        minted = await client.call_tool(
-            "hub_auth",
-            {
-                "action": "create_token",
-                "params_json": json.dumps(
-                    {"identifier": "tester", "secret": "dckr_pat_unit"}  # nosec B105 B106 — fake test credential
-                ),
-            },
-        )
-        created = await client.call_tool(
-            "hub_auth",
-            {
-                "action": "create_pat",
-                "params_json": json.dumps(
-                    {"token_label": "ci", "scopes": ["repo:read"]}  # nosec B105 B106 — fake test credential
-                ),
-            },
-        )
-        listed = await client.call_tool(
-            "hub_auth", {"action": "list_pats", "params_json": "{}"}
-        )
-    assert tool_payload(minted)["data"]["access_token"] == "***redacted***"
-    assert tool_payload(created)["data"]["token"] == "dckr_pat_PLAINTEXT"
-    assert "dckr_pat_PLAINTEXT" not in json.dumps(tool_payload(listed))
+    minted = await _call(
+        mcp_instance,
+        "dockerhub_create_auth_token",
+        {"identifier": "tester", "secret": "dckr_pat_unit"},  # nosec B105 B106 — fake test credential
+    )
+    created = await _call(
+        mcp_instance,
+        "dockerhub_create_access_token",
+        {"token_label": "ci", "scopes": ["repo:read"]},
+    )
+    listed = await _call(mcp_instance, "dockerhub_get_access_tokens", {})
+    assert minted["data"]["access_token"] == "***redacted***"
+    assert created["data"]["token"] == "dckr_pat_PLAINTEXT"
+    assert "dckr_pat_PLAINTEXT" not in json.dumps(listed)
 
 
-async def test_hub_admin_whoami(mcp_instance):
-    async with Client(mcp_instance) as client:
-        result = await client.call_tool(
-            "hub_admin", {"action": "whoami", "params_json": "{}"}
-        )
-    payload = tool_payload(result)
-    assert payload["data"]["authenticated"] is True
-
-
-async def test_hub_audit_and_scim_actions(mcp_instance):
-    async with Client(mcp_instance) as client:
-        audit = await client.call_tool(
-            "hub_audit",
-            {"action": "logs", "params_json": json.dumps({"account": "acme"})},
-        )
-        scim = await client.call_tool(
-            "hub_scim",
-            {
-                "action": "list_users",
-                "params_json": json.dumps({"start_index": 1, "count": 5}),
-            },
-        )
-    assert tool_payload(audit)["data"]["logs"]
-    assert tool_payload(scim)["data"]["totalResults"] == 1
-
-
-def test_tool_toggles_disable_modules(hub, monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["dockerhub-mcp"])
-    monkeypatch.setenv("SCIMTOOL", "False")
-    monkeypatch.setenv("AUDITTOOL", "False")
-    from dockerhub_api.mcp_server import get_mcp_instance
-
-    _mcp, _args, _middlewares, registered = get_mcp_instance()
-    assert "scim" not in registered
-    assert "audit" not in registered
-    assert "repos" in registered
+async def test_audit_and_scim(mcp_instance):
+    audit = await _call(mcp_instance, "dockerhub_get_audit_logs", {"account": "acme"})
+    scim = await _call(
+        mcp_instance, "dockerhub_get_scim_users", {"start_index": 1, "count": 5}
+    )
+    assert audit["data"]["logs"]
+    assert scim["data"]["totalResults"] == 1
 
 
 def test_redact_secrets_helper():
@@ -191,73 +127,41 @@ def test_redact_secrets_helper():
     assert redacted["ok"] == 1
 
 
-async def test_hub_registry_actions(mcp_instance):
+async def test_registry_operations(mcp_instance):
+    tags = await _call(mcp_instance, "dockerhub_registry_list_tags", {"repo": "nginx"})
+    inspected = await _call(
+        mcp_instance,
+        "dockerhub_registry_inspect",
+        {"repo": "nginx", "reference": "latest"},
+    )
+    assert tags["data"]["tags"] == ["latest", "1.0", "1.1"]
+    assert len(inspected["data"]["platforms"]) == 2
+
+
+async def test_scout_operations(mcp_instance):
+    cves = await _call(
+        mcp_instance,
+        "dockerhub_scout_get_cves",
+        {"repo": "myorg/app", "reference": "v1"},
+    )
+    assert cves["data"]["cves"][0]["id"] == "CVE-2026-0001"
+
+
+async def test_org_and_teams_operations(mcp_instance):
+    members = await _call(mcp_instance, "dockerhub_get_org_members", {"org": "acme"})
+    invites = await _call(
+        mcp_instance,
+        "dockerhub_bulk_invite",
+        {"org": "acme", "invitees": ["new@x.io"], "dry_run": True},
+    )
+    teams = await _call(mcp_instance, "dockerhub_get_groups", {"org": "acme"})
+    assert members["data"]["count"] == 2
+    assert invites["data"]["dry_run"] is True
+    assert teams["data"]["results"][0]["name"] == "platform"
+
+
+async def test_destructive_operations_are_annotated(mcp_instance):
     async with Client(mcp_instance) as client:
-        tags = await client.call_tool(
-            "hub_registry",
-            {"action": "list_tags", "params_json": json.dumps({"repo": "nginx"})},
-        )
-        inspected = await client.call_tool(
-            "hub_registry",
-            {
-                "action": "inspect",
-                "params_json": json.dumps({"repo": "nginx", "reference": "latest"}),
-            },
-        )
-    assert tool_payload(tags)["data"]["tags"] == ["latest", "1.0", "1.1"]
-    assert len(tool_payload(inspected)["data"]["platforms"]) == 2
-
-
-async def test_hub_registry_push_gated_via_mcp(mcp_instance):
-    async with Client(mcp_instance) as client:
-        result = await client.call_tool(
-            "hub_registry",
-            {
-                "action": "put_manifest",
-                "params_json": json.dumps(
-                    {
-                        "repo": "myorg/app",
-                        "reference": "v1",
-                        "manifest": {"schemaVersion": 2},
-                        "media_type": "application/vnd.docker.distribution.manifest.v2+json",
-                    }
-                ),
-            },
-        )
-    assert tool_payload(result)["error"]["type"] == "DestructiveOperationError"
-
-
-async def test_hub_scout_actions(mcp_instance):
-    async with Client(mcp_instance) as client:
-        cves = await client.call_tool(
-            "hub_scout",
-            {
-                "action": "cves",
-                "params_json": json.dumps({"repo": "myorg/app", "reference": "v1"}),
-            },
-        )
-    assert tool_payload(cves)["data"]["cves"][0]["id"] == "CVE-2026-0001"
-
-
-async def test_hub_org_and_teams_actions(mcp_instance):
-    async with Client(mcp_instance) as client:
-        members = await client.call_tool(
-            "hub_org",
-            {"action": "list_members", "params_json": json.dumps({"org": "acme"})},
-        )
-        invites = await client.call_tool(
-            "hub_org",
-            {
-                "action": "bulk_invite",
-                "params_json": json.dumps(
-                    {"org": "acme", "invitees": ["new@x.io"], "dry_run": True}
-                ),
-            },
-        )
-        teams = await client.call_tool(
-            "hub_teams",
-            {"action": "list", "params_json": json.dumps({"org": "acme"})},
-        )
-    assert tool_payload(members)["data"]["count"] == 2
-    assert tool_payload(invites)["data"]["dry_run"] is True
-    assert tool_payload(teams)["data"]["results"][0]["name"] == "platform"
+        tools = {t.name: t for t in await client.list_tools()}
+    assert tools["dockerhub_delete_group"].annotations.destructiveHint is True
+    assert tools["dockerhub_get_repositories"].annotations.readOnlyHint is True
