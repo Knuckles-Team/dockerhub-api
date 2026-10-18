@@ -12,7 +12,7 @@ from fastmcp import Context, FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
 
-from dockerhub_api.mcp import get_hub_client, parse_params
+from dockerhub_api.mcp import get_hub_client
 
 
 def _envelope_results(envelope: Any) -> list:
@@ -43,14 +43,20 @@ def _enrich_repos_with_tags(client: Any, namespace: str, repos: list) -> None:
 def register_kg_tools(mcp: FastMCP):
     @mcp.tool(tags={"kg"})
     async def dockerhub_ingest_repositories(
-        params_json: str = Field(
-            default="{}",
-            description=(
-                "JSON string of get_repositories params. Requires 'namespace'; "
-                "optional 'name', 'ordering', 'page', 'page_size', and "
-                "'include_tags' (bool) to also ingest each repo's tags as "
-                ":ContainerImage nodes."
-            ),
+        namespace: str = Field(
+            description="Docker Hub namespace (user or organization)."
+        ),
+        name: str | None = Field(
+            default=None, description="Filter repositories by name."
+        ),
+        ordering: str | None = Field(
+            default=None, description="Sort order, e.g. 'last_updated'."
+        ),
+        page: int | None = Field(default=None, description="Page number."),
+        page_size: int | None = Field(default=None, description="Results per page."),
+        include_tags: bool = Field(
+            default=False,
+            description="Also ingest each repository's tags as :ContainerImage nodes.",
         ),
         client=Depends(get_hub_client),
         ctx: Context | None = Field(
@@ -66,17 +72,19 @@ def register_kg_tools(mcp: FastMCP):
             await ctx.info("Listing Docker Hub repositories for ingestion...")
         from dockerhub_api.kg_ingest import ingest_repositories
 
-        try:
-            kwargs = parse_params(params_json)
-        except Exception:
-            return {"error": "Operation failed"}
-
-        namespace = kwargs.get("namespace")
         if not namespace:
             return {"error": "namespace is required"}
-        include_tags = bool(kwargs.pop("include_tags", False))
-
-        envelope = client.get_repositories(**kwargs)
+        kwargs = {
+            key: value
+            for key, value in {
+                "name": name,
+                "ordering": ordering,
+                "page": page,
+                "page_size": page_size,
+            }.items()
+            if value is not None
+        }
+        envelope = client.get_repositories(namespace=namespace, **kwargs)
         repos = _envelope_results(envelope)
 
         if include_tags:
