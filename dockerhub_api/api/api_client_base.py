@@ -266,7 +266,8 @@ class DockerHubApiBase:
 
             if self._should_refresh_token(response, refreshed_token):
                 refreshed_token = True
-                self._token_manager.invalidate()
+                if self._token_manager is not None:
+                    self._token_manager.invalidate()
                 continue
 
             return response, rate_limit

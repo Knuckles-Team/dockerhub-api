@@ -5,7 +5,7 @@
 
 ## Tech Stack & Architecture
 - Language/Version: Python 3.11+
-- Core Libraries: `agent-utilities`, `httpx`, `fastmcp`, `pydantic-ai`
+- Core Libraries: `agent-connector-sdk`, `httpx`, `fastmcp`, `pydantic-ai`
 - Key principles: raw `httpx` client, Pydantic input/response models, action-routed
   MCP tools, asynchronous tool execution.
 - Architecture:
@@ -14,7 +14,6 @@
     - `dockerhub_api/auth.py` — `TokenManager` (JWT mint/cache/refresh) + `get_client`.
     - `dockerhub_api/mcp/` — one action-routed tool module per domain.
     - `dockerhub_api/mcp_server.py` — MCP server entry point and tool registration.
-    - `dockerhub_api/agent_server.py` — Pydantic AI A2A agent server.
 
 ### Architecture Diagram
 ```mermaid
@@ -58,7 +57,6 @@ python -m pytest tests -q
 
 # Execution entry points
 dockerhub-mcp      # dockerhub_api.mcp_server:mcp_server
-dockerhub-agent    # dockerhub_api.agent_server:agent_server
 ```
 
 ## Project Structure Quick Reference
@@ -71,7 +69,7 @@ dockerhub-agent    # dockerhub_api.agent_server:agent_server
 
 ## Code Style & Conventions
 **Always:**
-- Use `agent-utilities` for common patterns (`create_mcp_server`, `create_agent_server`).
+- Use `agent-connector-sdk` for common patterns (`create_mcp_server`, `create_agent_server`).
 - Define input/output models using Pydantic; input models build `api_parameters`/`payload`
   in `model_post_init`.
 - Include descriptive docstrings for all tools (they are used as tool descriptions for LLMs).
@@ -104,11 +102,11 @@ dockerhub-agent    # dockerhub_api.agent_server:agent_server
 
 **Never do:**
 - Commit `.env` files or secrets.
-- Modify `agent-utilities` or `universal-skills` files from within this package.
+- Modify `agent-connector-sdk` or `universal-skills` files from within this package.
 
 ## When Stuck
 - Propose a plan first before making large changes.
-- Check `agent-utilities` documentation for existing helpers.
+- Check `agent-connector-sdk` documentation for existing helpers.
 - The structural sibling is `agents/gitlab-api` — follow its patterns.
 
 ## ⛔ Keep the Repository Root Pristine — No Scratch / Temp / Debug Files
@@ -178,10 +176,10 @@ only when the user asks, (4) remove the worktree and remove the merged branch.
 Working in parallel with other sessions/worktrees? **Reserve a concept id before you write its `CONCEPT:` marker** so two sessions never collide:
 
 ```bash
-agent-utilities --json concept reserve --ns EG-KG.compute.backend   # or a package prefix, e.g. KEY
+agent-connector-sdk --json concept reserve --ns EG-KG.compute.backend   # or a package prefix, e.g. KEY
 ```
 
-Full protocol (ledger, merge=union, reconcile, MCP/REST): <https://knuckles-team.github.io/agent-utilities/concept_coordination/>
+Full protocol (ledger, merge=union, reconcile, MCP/REST): <https://knuckles-team.github.io/agent-connector-sdk/concept_coordination/>
 <!-- END concept-coordination (generated) -->
 
 ## Version & lockfile drift edict (keep the version mirrors AND the lock in sync)
@@ -209,14 +207,14 @@ is what Dependabot flags. Rules:
 ## Upstream currency edict — target the newest release; a pin is a hypothesis, not a fact (READ BEFORE capping, deferring, or opt-in-gating an upgrade)
 
 This governs how this repository treat **other people's** releases, deprecations, and version caps in
-this repo (fleet-wide edict, propagated from `agent-utilities/AGENTS.md`).
+this repo (fleet-wide edict, propagated from `agent-connector-sdk/AGENTS.md`).
 
 1. **Latest by default.** Target the newest upstream release -- including a pre-release
    where the ecosystem has already moved onto it. Sitting on an old major because the
    upgrade is work is not a reason to defer it.
 2. **A conservative upstream pin is a hypothesis, not a fact -- test it, don't inherit
    it.** Upstream maintainers cap defensively (an unreleased major, an untested surface)
-   as often as they cap for a known break. Worked example (from `agent-utilities`):
+   as often as they cap for a known break. Worked example (from `agent-connector-sdk`):
    `pydantic-ai-slim` 2.18.0 declared `fastmcp-slim[client]>=3.3.0` with no upper bound;
    2.19.0 added `<4` purely as a defensive guard while fastmcp 4 was still pre-release --
    not because of an observed incompatibility. Blocking an upgrade on that kind of cap

@@ -1,6 +1,6 @@
 # dockerhub-api
 
-Docker Hub **API + MCP Server + A2A Agent** for the agent-utilities ecosystem — a
+Docker Hub **API + MCP Server + A2A Agent** for the agent-connector-sdk ecosystem — a
 typed, action-routed connector for the official Docker Hub API v2
 (`https://hub.docker.com`).
 
@@ -25,7 +25,6 @@ tools and an optional Pydantic-AI agent server. It provides:
 - **Action-routed MCP tools** — seven consolidated, togglable tool modules
   (`hub_auth`, `hub_repos`, `hub_org`, `hub_teams`, `hub_audit`, `hub_scim`,
   `hub_admin`) that minimize token overhead in LLM contexts.
-- **An A2A agent server** — a Pydantic-AI graph agent (console script
   `dockerhub-agent`) that calls the MCP tool surface and exposes an AG-UI web
   interface.
 

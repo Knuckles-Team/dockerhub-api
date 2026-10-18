@@ -1,5 +1,5 @@
 # Dockerhub Api
-## CLI or API | MCP | Agent
+## CLI or API | MCP
 
 ![PyPI - Version](https://img.shields.io/pypi/v/dockerhub-api)
 ![MCP Server](https://badge.mcpx.dev?type=server 'MCP Server')
@@ -13,10 +13,9 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/dockerhub-api)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/dockerhub-api)
 
-*Version: 1.1.0*
+*Version: 1.2.0*
 
 > **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
-> interfaces, the integrated A2A agent server, and guidance on the backing
 > Docker Hub platform are maintained in [docs/](docs/index.md).
 
 ---
@@ -70,7 +69,7 @@ multi-arch inspection, OCI referrers, and gated push/remove) and **Docker Scout*
 - **Integrated Graph Agent:** Built-in Pydantic AI agent (`dockerhub-agent`) with
   A2A and AG-UI web interfaces.
 - **Native Telemetry & Tracing:** Out-of-the-box OpenTelemetry exports and Langfuse
-  tracing via agent-utilities.
+  tracing via agent-connector-sdk.
 
 ---
 
@@ -79,14 +78,13 @@ multi-arch inspection, OCI referrers, and gated push/remove) and **Docker Scout*
 ```bash
 pip install dockerhub-api            # API client only
 pip install "dockerhub-api[mcp]"     # + MCP server
-pip install "dockerhub-api[agent]"   # + A2A agent server
 pip install "dockerhub-api[all]"     # everything
 ```
 
 | Extra | Adds |
 |---|---|
-| `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-utilities[mcp]` |
-| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-utilities[agent-runtime,logfire]` |
+| `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-connector-sdk` |
+| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-connector-sdk` |
 | `all` | `mcp` + `agent` |
 | `test` | pytest toolchain for development |
 
@@ -95,34 +93,28 @@ pip install "dockerhub-api[all]"     # everything
 uv pip install "dockerhub-api[mcp]"
 
 # Agent runtime (adds model orchestration to the shared graph engine)
-uv pip install "dockerhub-api[agent]"
 
 # Everything (development)
 uv pip install "dockerhub-api[all]"      # or: python -m pip install "dockerhub-api[all]"
 ```
 
-### Container images (`:mcp` vs `:agent`)
+### Container images (`:mcp`)
 
-One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `--target`:
+One multi-stage `docker/Dockerfile` builds the MCP-only image (`--target mcp`):
 
 | Image tag | Build target | Contents | Entrypoint |
 |-----------|--------------|----------|------------|
 | `example/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **connector-focused**, includes `epistemic-graph[full]`; no model-orchestration stack | `dockerhub-mcp` |
-| `example/dockerhub-api@sha256:<digest>` | `--target agent` (default) | `dockerhub-api[agent]` — **agent runtime**, model orchestration + `epistemic-graph[full]` | `dockerhub-agent` |
 
 ```bash
 docker build --target mcp   -t example/dockerhub-api:mcp    docker/   # connector-focused MCP server
-docker build --target agent -t example/dockerhub-api:agent-local docker/   # agent runtime
 ```
 
-`docker/mcp.compose.yml` runs the connector-focused `:mcp` server; `docker/agent.compose.yml` runs the
 agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 
 ### Knowledge-graph database (`epistemic-graph`)
 
-Both `[mcp]` and `[agent]` carry the **epistemic-graph** engine through the required
-Agent Utilities core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
-the server connector-focused; `[agent]` also enables model orchestration. Local
+Agent Connector SDK core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
 deployments can use the bundled engine. For production or shared state, run
 **epistemic-graph as a dedicated database service** and configure the runtime to use it.
 Deployment recipes (single-node + Raft HA), connection configuration, and architecture
@@ -138,12 +130,12 @@ diagrams are documented in the
 ```python
 from dockerhub_api.auth import get_client
 
-api = get_client()   # reads DOCKERHUB_URL / DOCKER_HUB_USER / DOCKER_HUB_TOKEN
+api = get_client()  # reads DOCKERHUB_URL / DOCKER_HUB_USER / DOCKER_HUB_TOKEN
 
 repos = api.get_repositories(namespace="acme", ordering="-last_updated")
 api.create_repository(namespace="acme", name="release-images", is_private=True)
 tags = api.get_repository_tags(namespace="acme", repository="release-images")
-print(api.rate_limit)   # latest X-RateLimit-* snapshot
+print(api.rate_limit)  # latest X-RateLimit-* snapshot
 ```
 
 Every client method returns a uniform envelope:
@@ -244,7 +236,7 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
 <!-- MCP-CONFIG-EXAMPLES:START -->
 
 > **Install the connector-focused `[mcp]` extra.** Examples use `dockerhub-api[mcp]` to add
-> FastMCP / FastAPI through `agent-utilities[mcp]`; the required Agent Utilities core
+> FastMCP / FastAPI through `agent-connector-sdk`; the required Agent Connector SDK core
 > still carries `epistemic-graph[full]`. The `[agent-runtime]` extra additionally
 > enables model orchestration.
 
@@ -286,7 +278,7 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
 }
 ```
 
-Runtime references require an alias-aware launcher such as GraphOS. Other
+Runtime references require an alias-aware launcher such as Arbora. Other
 launchers must omit those entries and inject the resolved values through their
 own runtime secret boundary.
 
@@ -424,27 +416,6 @@ The concept registry (`CONCEPT:DH-OS.governance.hub-x`) is documented in
 MIT — see [LICENSE](LICENSE).
 
 
-<!-- BEGIN agent-utilities-deployment (generated; do not edit between markers) -->
-
-## Deploy with `agent-utilities-deployment`
-
-Provision this package with the consolidated **`agent-utilities-deployment`**
-workflow. It selects an installed-package, editable-source, or immutable-container
-path; records only runtime secret and TLS-profile references in `AgentConfig`; and
-runs doctor, registration, policy, observability, and rollback gates. Ask your agent
-to **"deploy `dockerhub-api` with agent-utilities-deployment"**.
-
-| Install mode | Command |
-|------|---------|
-| Installed package | `uv tool install "dockerhub-api[mcp]"`, then run `dockerhub-mcp` |
-| Editable source | `uv pip install -e ".[agent]"`, then run `dockerhub-mcp` |
-| Immutable container | deploy `registry.example.invalid/dockerhub-api@sha256:<digest>` through the operator-selected orchestrator |
-
-The repository embeds no deployment profile, credential value, certificate path, or
-environment-specific endpoint. Supply those at runtime through `AgentConfig` and the
-configured secret provider.
-
-<!-- END agent-utilities-deployment -->
 
 <!-- GOVERNED-CAPABILITY:START -->
 ## Governed capability contract
@@ -459,7 +430,7 @@ historical per-task skill wrappers.
 Runtime endpoints, credentials, certificate trust, tenant identity, retention,
 and observability policy are deployment inputs and are never packaged values.
 See [Configuration, trust, and privacy](docs/configuration.md) before enabling a
-network transport, connector ingestion, GraphOS delegation, or trace export.
+network transport, connector ingestion, Arbora delegation, or trace export.
 <!-- GOVERNED-CAPABILITY:END -->
 
 ## Environment Variables
@@ -507,7 +478,7 @@ network transport, connector ingestion, GraphOS delegation, or trace export.
 | `SCOUTTOOL` | `True` |  |
 | `KGTOOL` | `True` |  |
 
-#### Inherited agent-utilities variables (apply to every connector)
+#### Inherited agent-connector-sdk variables (apply to every connector)
 
 | Variable | Example | Description |
 |----------|---------|-------------|
@@ -528,5 +499,5 @@ network transport, connector ingestion, GraphOS delegation, or trace export.
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-connector-sdk set — do not edit._
 <!-- ENV-VARS-TABLE:END -->

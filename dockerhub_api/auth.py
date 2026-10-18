@@ -59,15 +59,15 @@ _token_managers: dict[tuple, "TokenManager"] = {}
 def _entitled(namespace: str, names: list[str]) -> list[str]:
     """Filter ``names`` to the subset the calling identity's Okta/Keycloak groups
     entitle (CONCEPT:AU-OS.identity.identity-scoped-resource-autoload). Degrades
-    to the full list if agent-utilities predates the resolver, or if no caller
+    to the full list if agent-connector-sdk predates the resolver, or if no caller
     identity is bound at all (SYSTEM_ACTOR / unauthenticated-local sees all —
     unchanged from pre-feature behavior, same as every other fleet caller of
     ``identity_scoped_resources``). A *bound-but-unauthorized* actor still
     fails closed — only the "nothing to check" case degrades.
     """
     try:
-        from agent_utilities.security.brain_context import IdentityRequiredError
-        from agent_utilities.security.entitlements import identity_scoped_resources
+        from agent_connector_sdk.identity import IdentityRequiredError
+        from agent_connector_sdk.entitlements import identity_scoped_resources
     except Exception:
         return list(names)
     try:

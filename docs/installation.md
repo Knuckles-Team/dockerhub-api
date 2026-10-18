@@ -11,7 +11,6 @@
 ```bash
 pip install dockerhub-api              # API client only
 pip install "dockerhub-api[mcp]"       # + MCP server
-pip install "dockerhub-api[agent]"     # + A2A agent server
 pip install "dockerhub-api[all]"       # everything
 ```
 
