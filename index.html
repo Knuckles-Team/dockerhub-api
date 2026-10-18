@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Docker Hub API + MCP Server + A2A Agent — a typed, action-routed Docker Hub connector for the agent-utilities ecosystem.">
+        <meta name="description" content="Docker Hub API + MCP Server + A2A Agent — a typed, action-routed Docker Hub connector for the agent-connector-sdk ecosystem.">
       
       
       
@@ -809,7 +809,7 @@
 
 
 <h1 id="dockerhub-api">dockerhub-api<a class="headerlink" href="#dockerhub-api" title="Permanent link">&para;</a></h1>
-<p>Docker Hub <strong>API + MCP Server + A2A Agent</strong> for the agent-utilities ecosystem — a
+<p>Docker Hub <strong>API + MCP Server + A2A Agent</strong> for the agent-connector-sdk ecosystem — a
 typed, action-routed connector for the official Docker Hub API v2
 (<code>https://hub.docker.com</code>).</p>
 <div class="admonition info">
@@ -831,8 +831,7 @@ tools and an optional Pydantic-AI agent server. It provides:</p>
   audit logs, and SCIM 2.0 provisioning.</li>
 <li><strong>Action-routed MCP tools</strong> — seven consolidated, togglable tool modules
   (<code>hub_auth</code>, <code>hub_repos</code>, <code>hub_org</code>, <code>hub_teams</code>, <code>hub_audit</code>, <code>hub_scim</code>,
-  <code>hub_admin</code>) that minimize token overhead in LLM contexts.</li>
-<li><strong>An A2A agent server</strong> — a Pydantic-AI graph agent (console script
+  <code>hub_admin</code>) that minimize token overhead in LLM contexts.
   <code>dockerhub-agent</code>) that calls the MCP tool surface and exposes an AG-UI web
   interface.</li>
 </ul>

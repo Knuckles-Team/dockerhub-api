@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Docker Hub API + MCP Server + A2A Agent — a typed, action-routed Docker Hub connector for the agent-utilities ecosystem.">
+        <meta name="description" content="Docker Hub API + MCP Server + A2A Agent — a typed, action-routed Docker Hub connector for the agent-connector-sdk ecosystem.">
       
       
       
@@ -703,7 +703,7 @@
 </blockquote>
 <p>This connector inherits the ecosystem bridge concept <code>ECO-4.0</code>
 (connector parity standard) from
-<a href="https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/overview.md"><code>agent-utilities</code></a>,
+<a href="https://github.com/Knuckles-Team/agent-connector-sdk/blob/main/docs/overview.md"><code>agent-connector-sdk</code></a>,
 alongside <code>ECO-4.1</code> (MCP &amp; Universal Skills) and <code>AU-ECO.toolkit.journey-map-narrative</code> (A2A Network).</p>
 <p>The <code>CONCEPT:DH-OS.governance.hub-x</code> registry tracks the load-bearing capabilities of this
 connector. Markers appear in module docstrings so traceability sweeps can map
@@ -746,11 +746,6 @@ concept → code.</p>
 <td><code>CONCEPT:DH-OS.governance.scim-provisioning-all-requests</code></td>
 <td><strong>SCIM provisioning</strong> — <code>application/scim+json</code> media type, SCIM-style <code>startIndex</code>/<code>count</code> pagination, discovery + user lifecycle.</td>
 <td><code>dockerhub_api/api/api_client_scim.py</code>, <code>dockerhub_api/mcp/mcp_scim.py</code></td>
-</tr>
-<tr>
-<td><code>CONCEPT:DH-OS.governance.a2a-agent-server-pydantic</code></td>
-<td><strong>A2A agent server</strong> — Pydantic-AI graph agent over the MCP tool surface with AG-UI web interface.</td>
-<td><code>dockerhub_api/agent_server.py</code>, <code>a2a.json</code>, <code>dockerhub_api/main_agent.json</code></td>
 </tr>
 <tr>
 <td><code>CONCEPT:DH-OS.identity.registry-v2-scoped-token</code></td>
