@@ -13,7 +13,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/dockerhub-api)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/dockerhub-api)
 
-*Version: 1.2.0*
+*Version: 1.2.1*
 
 > **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
 > Docker Hub platform are maintained in [docs/](docs/index.md).
