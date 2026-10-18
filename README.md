@@ -13,7 +13,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/dockerhub-api)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/dockerhub-api)
 
-*Version: 1.1.0*
+*Version: 1.2.0*
 
 > **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
 > Docker Hub platform are maintained in [docs/](docs/index.md).
@@ -130,12 +130,12 @@ diagrams are documented in the
 ```python
 from dockerhub_api.auth import get_client
 
-api = get_client()   # reads DOCKERHUB_URL / DOCKER_HUB_USER / DOCKER_HUB_TOKEN
+api = get_client()  # reads DOCKERHUB_URL / DOCKER_HUB_USER / DOCKER_HUB_TOKEN
 
 repos = api.get_repositories(namespace="acme", ordering="-last_updated")
 api.create_repository(namespace="acme", name="release-images", is_private=True)
 tags = api.get_repository_tags(namespace="acme", repository="release-images")
-print(api.rate_limit)   # latest X-RateLimit-* snapshot
+print(api.rate_limit)  # latest X-RateLimit-* snapshot
 ```
 
 Every client method returns a uniform envelope:

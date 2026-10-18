@@ -242,7 +242,8 @@ class RegistryApiBase(DockerHubApiBase):
         service = challenge.get("service")
         if challenge.get("scope"):
             scope = challenge["scope"]
-        self._registry_token_manager.invalidate(scope)
+        if self._registry_token_manager is not None:
+            self._registry_token_manager.invalidate(scope)
         return realm, service, scope
 
     def _send_registry_request_with_retry(

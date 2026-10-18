@@ -7,7 +7,6 @@
         "dockerhub-mcp"
       ],
       "env": {
-        "MCP_TOOL_MODE": "intent",
         "ADMINTOOL": "True",
         "AUDITTOOL": "True",
         "AUTHTOOL": "True",
