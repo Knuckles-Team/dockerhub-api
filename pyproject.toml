@@ -35,6 +35,10 @@ dockerhub-api = "dockerhub_api.ontology"
 [project.entry-points."agent_connector_sdk.source_connector_providers"]
 dockerhub-api = "dockerhub_api.connectors"
 
+# The one declared connector identity: the fleet name (SDK-CONNECTOR-CONTROL-R071).
+[project.entry-points."agent_connector_sdk.connector"]
+dockerhub-mcp = "dockerhub_api"
+
 [tool.uv.workspace]
 members = ["."]
 

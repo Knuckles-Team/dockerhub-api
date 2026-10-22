@@ -1,4 +1,4 @@
-connector: dockerhub-api
+connector: dockerhub-mcp
 ontology_source: dockerhub
 schema_version: '1'
 resources:

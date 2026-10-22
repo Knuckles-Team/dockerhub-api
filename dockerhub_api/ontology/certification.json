@@ -1,9 +1,9 @@
 {
   "api_version": "arbora.io/v1",
   "artifacts": {
-    "connector_manifest.yml": "aa4e92054e9cf8ce40dd82b3878d86dbfbc94dcd675e592ef6489f9e61e491c6",
+    "connector_manifest.yml": "1d2826d511f1b9ad3c921d7cca5d094285890c92bdd61cf4d27fc33853301e7d",
     "dockerhub_api/connectors/mcp_source_presets.json": "96b893636a49ece1a5f32decb9aea8e3740178cb5e4a19753748b4d18e7ca678",
-    "dockerhub_api/connectors/tool_schema_fingerprints.json": "5a20f3a9ddc3df4428a3018b4e2e86d586c843cb2770f88dfd02a92b13ecf7a2",
+    "dockerhub_api/connectors/tool_schema_fingerprints.json": "60f37329f11dc900fa385099069f005c7fc8f4b8afcb0ac05d48794b1c62324a",
     "dockerhub_api/ontology/dockerhub.ttl": "bd3f4498e3e9463ee4395a5da1d6afcbfc081a1437e1be52437ab4d52e18d55a",
     "dockerhub_api/ontology/fixtures/records.json": "cdf24bdcd53b75daef789c05f93d55ced4ce4a138360a2ff9f1e34c55f8f6da8",
     "dockerhub_api/ontology/mappings/source.yaml": "72d333a63cb808bbc9a2f031834fa4c75919b11a8171ad5b347fad61247fa016",
@@ -22,7 +22,7 @@
     "bundle_schema": "2",
     "epistemic_graph": ">=2.27.0,<3"
   },
-  "connector": "dockerhub-api",
+  "connector": "dockerhub-mcp",
   "kind": "ConnectorSourceAttestation",
   "live_certified": false,
   "mode": "offline-source",
