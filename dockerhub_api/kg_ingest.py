@@ -25,7 +25,7 @@ from agent_connector_sdk.ingest import (
     current_ingest,
 )
 
-_BINDING = IngestBinding(connector="dockerhub-api", stream="dockerhub")
+_BINDING = IngestBinding(connector="dockerhub-mcp", stream="dockerhub")
 
 _ENTITY_RESERVED_KEYS = frozenset({"id", "node_type"})
 _RELATIONSHIP_RESERVED_KEYS = frozenset({"source", "target", "relationship"})
