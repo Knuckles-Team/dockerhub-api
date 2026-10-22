@@ -1,0 +1,23 @@
+{
+  "schema_version": 2,
+  "spec_id": "CONN-DOCKERHUB-API-CONNECTOR-IDENTITY",
+  "owner_repo": "dockerhub-api",
+  "delivery_state": "VERIFIED",
+  "requirement_ids": [
+    "CONN-DOCKERHUB-API-CONNECTOR-IDENTITY-R001"
+  ],
+  "requirements": [
+    {
+      "id": "CONN-DOCKERHUB-API-CONNECTOR-IDENTITY-R001",
+      "title": "Fleet name",
+      "delivery_state": "VERIFIED",
+      "landed_in": [
+        "1464c37a15c3",
+        "27a0bc6e517e"
+      ],
+      "verified_by": [
+        "tests/test_fleet_name.py:35"
+      ]
+    }
+  ]
+}
