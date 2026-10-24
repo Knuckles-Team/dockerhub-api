@@ -1,5 +1,5 @@
 schema_version: '1'
-connector: dockerhub-api
+connector: dockerhub-mcp
 ontology_source: dockerhub
 sync:
 - preset: dockerhub-repositories
