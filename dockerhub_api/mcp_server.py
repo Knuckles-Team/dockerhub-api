@@ -15,107 +15,30 @@ with warnings.catch_warnings():
 warnings.filterwarnings("ignore", message=".*urllib3.*or chardet.*")
 warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 
-import logging
-import os
-import sys
-from typing import Any
 
-from agent_connector_sdk.config import load_config
-from agent_connector_sdk.mcp.server import create_mcp_server
-from agent_connector_sdk.mcp.tool_surface import register_tool_surface
-from fastmcp.utilities.logging import get_logger
-
-from dockerhub_api.api.api_client_registry import RegistryApi
-from dockerhub_api.api.api_client_scout import ScoutApi
-from dockerhub_api.api_client import Api
 from dockerhub_api.mcp import (
-    get_hub_client,
-    get_registry_client,
-    get_scout_client,
-    redact_secrets,
-    register_admin_tools,  # noqa: F401
-    register_audit_tools,  # noqa: F401
-    register_auth_tools,  # noqa: F401
-    register_kg_tools,  # noqa: F401
-    register_org_tools,  # noqa: F401
-    register_registry_tools,  # noqa: F401
-    register_repos_tools,  # noqa: F401
-    register_scim_tools,  # noqa: F401
-    register_scout_tools,  # noqa: F401
-    register_teams_tools,  # noqa: F401
+    register_admin_tools,
+    register_audit_tools,
+    register_auth_tools,
+    register_kg_tools,
+    register_org_tools,
+    register_registry_tools,
+    register_repos_tools,
+    register_scim_tools,
+    register_scout_tools,
+    register_teams_tools,
 )
 
-__version__ = "1.3.4"
-print(f"Docker Hub MCP v{__version__}", file=sys.stderr)
-
-logger = get_logger(name="mcp_server")
-logger.setLevel(logging.DEBUG)
-
-
-def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
-    """Initialize and return the Docker Hub MCP instance, args, and middlewares."""
-    load_config()
-    os.environ["FASTMCP_LOG_LEVEL"] = "ERROR"
-    os.environ["TERM"] = "dumb"
-    os.environ["NO_COLOR"] = "1"
-
-    args, mcp, middlewares = create_mcp_server(
-        name="DockerHub",
-        version=__version__,
-        instructions=(
-            "Docker Hub API MCP Server - Manage repositories, tags, access "
-            "tokens, organizations, teams, audit logs, and SCIM provisioning; "
-            "plus Registry v2 image operations (manifests, blobs, digests, "
-            "multi-arch inspect, OCI referrers, gated push/delete) and Docker "
-            "Scout CVE/SBOM/policy intelligence."
-        ),
-    )
-
-    registered_tags = register_tool_surface(
-        mcp,
-        client_cls=Api,
-        get_client=get_hub_client,
-        service="dockerhub-api",
-        tools_module=sys.modules[__name__],
-        verbose_targets=[
-            {
-                "client_cls": RegistryApi,
-                "get_client": get_registry_client,
-                "prefix": "dockerhub_registry",
-            },
-            {
-                "client_cls": ScoutApi,
-                "get_client": get_scout_client,
-                "prefix": "dockerhub_scout",
-            },
-        ],
-        result_coercer=redact_secrets,
-    )
-
-    for mw in middlewares:
-        mcp.add_middleware(mw)
-
-    return mcp, args, middlewares, registered_tags
-
-
-def mcp_server() -> None:
-    mcp, args, middlewares, registered_tags = get_mcp_instance()
-    print(f"{'dockerhub-api'} MCP v{__version__}", file=sys.stderr)
-    print("\nStarting MCP Server", file=sys.stderr)
-    print(f"  Transport: {args.transport.upper()}", file=sys.stderr)
-    print(f"  Auth: {args.auth_type}", file=sys.stderr)
-    print(f"  Dynamic Tags Loaded: {len(set(registered_tags))}", file=sys.stderr)
-
-    if args.transport == "stdio":
-        mcp.run(transport="stdio")
-    elif args.transport == "streamable-http":
-        mcp.run(transport="streamable-http", host=args.host, port=args.port)
-    elif args.transport == "sse":
-        mcp.run(transport="sse", host=args.host, port=args.port)
-    else:
-        logger.error("Invalid transport", extra={"transport": args.transport})
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    mcp_server()
+# SDK discovery registers the register_<tag>_tools functions bound in this module.
+__all__ = [
+    "register_admin_tools",
+    "register_audit_tools",
+    "register_auth_tools",
+    "register_kg_tools",
+    "register_org_tools",
+    "register_registry_tools",
+    "register_repos_tools",
+    "register_scim_tools",
+    "register_scout_tools",
+    "register_teams_tools",
+]

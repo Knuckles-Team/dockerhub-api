@@ -98,3 +98,36 @@ def __getattr__(name: str) -> Any:
 
 def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)
+
+
+from agent_connector_sdk.connector import Connector
+
+from dockerhub_api.api.api_client_registry import RegistryApi
+from dockerhub_api.api.api_client_scout import ScoutApi
+from dockerhub_api.api_client import Api
+from dockerhub_api.mcp import (
+    get_hub_client,
+    get_registry_client,
+    get_scout_client,
+    redact_secrets,
+)
+
+connector = Connector(
+    api=Api,
+    get_client=get_hub_client,
+    tools="dockerhub_api.mcp_server",
+    instructions="Docker Hub API MCP Server - Manage repositories, tags, access tokens, organizations, teams, audit logs, and SCIM provisioning; plus Registry v2 image operations (manifests, blobs, digests, multi-arch inspect, OCI referrers, gated push/delete) and Docker Scout CVE/SBOM/policy intelligence.",
+    verbose_targets=(
+        {
+            "client_cls": RegistryApi,
+            "get_client": get_registry_client,
+            "prefix": "dockerhub_registry",
+        },
+        {
+            "client_cls": ScoutApi,
+            "get_client": get_scout_client,
+            "prefix": "dockerhub_scout",
+        },
+    ),
+    result_coercer=redact_secrets,
+)
