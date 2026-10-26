@@ -66,8 +66,8 @@ def _entitled(namespace: str, names: list[str]) -> list[str]:
     fails closed — only the "nothing to check" case degrades.
     """
     try:
-        from agent_connector_sdk.identity import IdentityRequiredError
         from agent_connector_sdk.entitlements import identity_scoped_resources
+        from agent_connector_sdk.identity import IdentityRequiredError
     except Exception:
         return list(names)
     try:

@@ -22,5 +22,3 @@ def test_mcp_server_help():
         timeout=120,
     )
     assert result.returncode == 0
-
-

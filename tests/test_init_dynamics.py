@@ -13,5 +13,3 @@ def test_core_symbols_exposed():
     for symbol in ("Api", "get_client", "TokenManager"):
         assert symbol in module.__all__
         assert hasattr(module, symbol)
-
-
