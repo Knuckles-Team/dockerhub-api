@@ -31,7 +31,9 @@ class _FakeTransport:
         self.requests: list[SourceIngestionRequest] = []
 
     async def source_status(self, _connector: str, _stream: str) -> Any:
-        return SimpleNamespace(accepted_checkpoint=None)
+        return SimpleNamespace(
+            connector=_connector, stream=_stream, accepted_checkpoint=None
+        )
 
     async def submit(self, request: SourceIngestionRequest) -> Any:
         self.requests.append(request)
@@ -117,7 +119,9 @@ async def test_ingest_repositories_maps_repo_namespace_and_images(ingest):
     img_record = next(r for r in request.records if r.record_id == img_id)
     assert img_record.payload["digest"] == "sha256:abc"
     assert img_record.payload["architecture"] == "amd64"
-    relation_refs = {rel.relation_reference.rsplit("/", 1)[-1] for rel in request.relationships}
+    relation_refs = {
+        rel.relation_reference.rsplit("/", 1)[-1] for rel in request.relationships
+    }
     assert relation_refs == {"inNamespace", "imageOf", "hasImage"}
 
 
