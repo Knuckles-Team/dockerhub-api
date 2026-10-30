@@ -133,7 +133,7 @@
     rdfs:comment """Docker Hub container-registry model — namespaces and organizations,
     image repositories, tags and the concrete container images they resolve to (digest,
     architecture, size), teams and their repository permissions, access tokens, and Docker
-    Scout vulnerabilities — federated into the agent-connector-sdk knowledge-graph hub.""" .
+    Scout vulnerabilities — federated into the scion-sdk knowledge-graph hub.""" .
 
 # ontology-codemod R3
 <http://knuckles.team/kg#ContainerImage> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#ContainerImage> .

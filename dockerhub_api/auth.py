@@ -26,10 +26,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from agent_connector_sdk.config import setting
-from agent_connector_sdk.exceptions import AuthError
-from agent_connector_sdk.tls.profile import ResolvedTLSProfile
-from agent_connector_sdk.tls.resolve import resolve_tls_profile
+from scion_sdk.config import setting
+from scion_sdk.exceptions import AuthError
+from scion_sdk.tls.profile import ResolvedTLSProfile
+from scion_sdk.tls.resolve import resolve_tls_profile
 
 logger = logging.getLogger(__name__)
 
@@ -59,15 +59,15 @@ _token_managers: dict[tuple, "TokenManager"] = {}
 def _entitled(namespace: str, names: list[str]) -> list[str]:
     """Filter ``names`` to the subset the calling identity's Okta/Keycloak groups
     entitle (CONCEPT:AU-OS.identity.identity-scoped-resource-autoload). Degrades
-    to the full list if agent-connector-sdk predates the resolver, or if no caller
+    to the full list if scion-sdk predates the resolver, or if no caller
     identity is bound at all (SYSTEM_ACTOR / unauthenticated-local sees all —
     unchanged from pre-feature behavior, same as every other fleet caller of
     ``identity_scoped_resources``). A *bound-but-unauthorized* actor still
     fails closed — only the "nothing to check" case degrades.
     """
     try:
-        from agent_connector_sdk.entitlements import identity_scoped_resources
-        from agent_connector_sdk.identity import IdentityRequiredError
+        from scion_sdk.entitlements import identity_scoped_resources
+        from scion_sdk.identity import IdentityRequiredError
     except Exception:
         return list(names)
     try:

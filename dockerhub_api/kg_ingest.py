@@ -5,7 +5,7 @@ pushes its data into the ONE epistemic-graph knowledge graph as **typed OWL node
 (``:Repository``, ``:ContainerImage``, ``:Namespace``, …) + links, matching the classes
 federated by ``dockerhub_api.ontology``.
 
-This is a thin mapper over ``agent_connector_sdk.ingest`` -- the generated ``SourceIngest``
+This is a thin mapper over ``scion_sdk.ingest`` -- the generated ``SourceIngest``
 client, not a local ingestion helper. Node ids follow ``dockerhub:<class>:<externalId>``;
 ``node_type`` on each entity matches a class in ``dockerhub.ttl``.
 """
@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent_connector_sdk.ingest import (
+from scion_sdk.ingest import (
     ChangeSet,
     Document,
     Entity,

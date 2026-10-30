@@ -4,7 +4,7 @@
 A resolved Docker Hub ``username`` (personal account or org) the caller's
 identity is not entitled to is denied before ``get_client``/``get_registry_client``
 mint any token. Tests the enforcement logic with the entitlement source
-mocked (the resolver itself is tested in agent-connector-sdk).
+mocked (the resolver itself is tested in scion-sdk).
 """
 
 import pytest
@@ -70,7 +70,7 @@ def test_missing_resolver_degrades_to_allow(monkeypatch):
     real_import = builtins.__import__
 
     def _blocked_import(name, *args, **kwargs):
-        if name == "agent_connector_sdk.entitlements":
+        if name == "scion_sdk.entitlements":
             raise ImportError("simulated: resolver not available")
         return real_import(name, *args, **kwargs)
 

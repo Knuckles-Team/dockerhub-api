@@ -13,7 +13,7 @@ description: >-
 license: MIT
 tags: [dockerhub, organization, teams, tokens, scim, audit, mcp]
 metadata:
-  author: Genius
+  author: Knuckles-Team
   version: '0.1.0'
 ---
 # Docker Hub Organization Administration

@@ -50,7 +50,7 @@ def mcp_instance(hub, registry, scout, monkeypatch):
         hub_auth_module, "get_scout_client", lambda **_k: make_scout_api(scout)
     )
     monkeypatch.setattr(sys, "argv", ["dockerhub-mcp"])
-    from agent_connector_sdk.connector import build_server
+    from scion_sdk.connector import build_server
 
     _, mcp = build_server("dockerhub_api", command_args=[])
     return mcp

@@ -14,7 +14,7 @@ description: >-
 license: MIT
 tags: [dockerhub, repositories, tags, container-registry, mcp]
 metadata:
-  author: Genius
+  author: Knuckles-Team
   version: '0.1.0'
 ---
 # Docker Hub Repository Management
