@@ -119,7 +119,7 @@ Register the server in any MCP-capable client using the template in
 - Prefer **organization access tokens** scoped with `TYPE_REPO` path globs over
   account-wide PATs for CI/CD.
 - Eunomia policies and OTEL/Langfuse tracing are available through the
-  agent-connector-sdk server bootstrap (see `.env.example`).
+  scion-sdk server bootstrap (see `.env.example`).
 
 ## Debug image
 

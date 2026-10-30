@@ -1,6 +1,6 @@
 # dockerhub-api
 
-Docker Hub **API + MCP Server + A2A Agent** for the agent-connector-sdk ecosystem — a
+Docker Hub **API + MCP Server + A2A Agent** for the scion-sdk ecosystem — a
 typed, action-routed connector for the official Docker Hub API v2
 (`https://hub.docker.com`).
 

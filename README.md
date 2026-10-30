@@ -67,7 +67,7 @@ multi-arch inspection, OCI referrers, and gated push/remove) and **Docker Scout*
 - **Integrated Graph Agent:** Built-in Pydantic AI agent (`dockerhub-agent`) with
   A2A and AG-UI web interfaces.
 - **Native Telemetry & Tracing:** Out-of-the-box OpenTelemetry exports and Langfuse
-  tracing via agent-connector-sdk.
+  tracing via scion-sdk.
 
 ---
 
@@ -81,8 +81,8 @@ pip install "dockerhub-api[all]"     # everything
 
 | Extra | Adds |
 |---|---|
-| `mcp` | FastMCP server (`dockerhub-mcp`) via `agent-connector-sdk` |
-| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `agent-connector-sdk` |
+| `mcp` | FastMCP server (`dockerhub-mcp`) via `scion-sdk` |
+| `agent` | Pydantic-AI A2A agent (`dockerhub-agent`) + Logfire via `scion-sdk` |
 | `all` | `mcp` + `agent` |
 | `test` | pytest toolchain for development |
 
@@ -112,7 +112,7 @@ agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 
 ### Knowledge-graph database (`epistemic-graph`)
 
-Agent Connector SDK core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
+Scion SDK core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
 deployments can use the bundled engine. For production or shared state, run
 **epistemic-graph as a dedicated database service** and configure the runtime to use it.
 Deployment recipes (single-node + Raft HA), connection configuration, and architecture
@@ -234,7 +234,7 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
 <!-- MCP-CONFIG-EXAMPLES:START -->
 
 > **Install the connector-focused `[mcp]` extra.** Examples use `dockerhub-api[mcp]` to add
-> FastMCP / FastAPI through `agent-connector-sdk`; the required Agent Connector SDK core
+> FastMCP / FastAPI through `scion-sdk`; the required Scion SDK core
 > still carries `epistemic-graph[full]`. The `[agent-runtime]` extra additionally
 > enables model orchestration.
 
@@ -476,7 +476,7 @@ network transport, connector ingestion, Arbora delegation, or trace export.
 | `SCOUTTOOL` | `True` |  |
 | `KGTOOL` | `True` |  |
 
-#### Inherited agent-connector-sdk variables (apply to every connector)
+#### Inherited scion-sdk variables (apply to every connector)
 
 | Variable | Example | Description |
 |----------|---------|-------------|
@@ -497,5 +497,5 @@ network transport, connector ingestion, Arbora delegation, or trace export.
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-connector-sdk set — do not edit._
+_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared scion-sdk set — do not edit._
 <!-- ENV-VARS-TABLE:END -->

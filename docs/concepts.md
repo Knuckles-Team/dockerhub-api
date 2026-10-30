@@ -4,7 +4,7 @@
 
 This connector inherits the ecosystem bridge concept `ECO-4.0`
 (connector parity standard) from
-[`agent-connector-sdk`](https://github.com/Knuckles-Team/agent-connector-sdk/blob/main/docs/overview.md),
+[`scion-sdk`](https://github.com/Knuckles-Team/scion-sdk/blob/main/docs/overview.md),
 alongside `ECO-4.1` (MCP & Universal Skills) and `AU-ECO.toolkit.journey-map-narrative` (A2A Network).
 
 The `CONCEPT:DH-OS.governance.hub-x` registry tracks the load-bearing capabilities of this

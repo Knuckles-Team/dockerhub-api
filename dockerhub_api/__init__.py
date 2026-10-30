@@ -100,7 +100,7 @@ def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)
 
 
-from agent_connector_sdk.connector import Connector
+from scion_sdk.connector import Connector
 
 from dockerhub_api.api.api_client_registry import RegistryApi
 from dockerhub_api.api.api_client_scout import ScoutApi

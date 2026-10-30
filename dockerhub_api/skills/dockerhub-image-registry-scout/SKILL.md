@@ -13,7 +13,7 @@ description: >-
 license: MIT
 tags: [dockerhub, registry, oci, docker-scout, vulnerabilities, mcp]
 metadata:
-  author: Genius
+  author: Knuckles-Team
   version: '0.1.0'
 ---
 # Docker Hub Image Registry & Scout
