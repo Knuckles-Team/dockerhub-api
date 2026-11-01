@@ -2,4 +2,6 @@
 
 Governing spec: [spec.md](spec.md). Design: [plan.md](plan.md). Rows: [requirements.md](requirements.md).
 
-- [x] **CONN-DOCKERHUB-API-CONNECTOR-IDENTITY-R001:** File the pack, manifest and ingest binding under the fleet name `dockerhub-mcp`.
+Each task line reads `- [ ] T001 [P] [US1] <ID>-R012.4 description`. Order is producer first.
+
+- [x] T001 [US1] CONN-DOCKERHUB-API-CONNECTOR-IDENTITY-R001 Fleet name.
