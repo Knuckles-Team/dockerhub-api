@@ -1,7 +1,7 @@
-"""Native epistemic-graph ingestion for Docker Hub records (typed graph nodes).
+"""Native medulla ingestion for Docker Hub records (typed graph nodes).
 
 CONCEPT:AU-KG.ingest.enterprise-source-extractor. The dockerhub-api connector natively
-pushes its data into the ONE epistemic-graph knowledge graph as **typed OWL nodes**
+pushes its data into the ONE medulla knowledge graph as **typed OWL nodes**
 (``:Repository``, ``:ContainerImage``, ``:Namespace``, …) + links, matching the classes
 federated by ``dockerhub_api.ontology``.
 
@@ -64,7 +64,7 @@ async def ingest_entities(
     *,
     ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
-    """Write typed OWL nodes (+ edges) into epistemic-graph via the SDK ingest facade.
+    """Write typed OWL nodes (+ edges) into medulla via the SDK ingest facade.
 
     Uses canonical ``node_type`` / ``relationship`` structural fields.
     """

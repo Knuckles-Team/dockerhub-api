@@ -102,7 +102,7 @@ One multi-stage `docker/Dockerfile` builds the MCP-only image (`--target mcp`):
 
 | Image tag | Build target | Contents | Entrypoint |
 |-----------|--------------|----------|------------|
-| `example/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **connector-focused**, includes `epistemic-graph[full]`; no model-orchestration stack | `dockerhub-mcp` |
+| `example/dockerhub-api:mcp` | `--target mcp` | `dockerhub-api[mcp]` — **connector-focused**, includes `medulla`; no model-orchestration stack | `dockerhub-mcp` |
 
 ```bash
 docker build --target mcp   -t example/dockerhub-api:mcp    docker/   # connector-focused MCP server
@@ -110,14 +110,14 @@ docker build --target mcp   -t example/dockerhub-api:mcp    docker/   # connecto
 
 agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 
-### Knowledge-graph database (`epistemic-graph`)
+### Knowledge-graph database (`medulla`)
 
-Scion SDK core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
+Scion SDK core dependency (`medulla`). The `[mcp]` extra keeps
 deployments can use the bundled engine. For production or shared state, run
-**epistemic-graph as a dedicated database service** and configure the runtime to use it.
+**medulla as a dedicated database service** and configure the runtime to use it.
 Deployment recipes (single-node + Raft HA), connection configuration, and architecture
 diagrams are documented in the
-[epistemic-graph deployment guide](https://knuckles-team.github.io/epistemic-graph/deployment/).
+[medulla deployment guide](https://knuckles-team.github.io/medulla/deployment/).
 
 ---
 
@@ -154,7 +154,7 @@ _Auto-generated — do not edit (synced by the `mcp-readme-table` pre-commit hoo
 | `hub_admin` | `ADMINTOOL` | Client diagnostics: 'rate_limit' returns the latest |
 | `hub_audit` | `AUDITTOOL` | Read a Docker Hub account's audit trail: 'logs' lists events |
 | `hub_auth` | `AUTHTOOL` | Manage Docker Hub authentication, personal access tokens (PATs), |
-| `dockerhub_ingest_repositories` | `KGTOOL` | Natively ingest repositories into the epistemic-graph as typed :Repository/:ContainerImage nodes. |
+| `dockerhub_ingest_repositories` | `KGTOOL` | Natively ingest repositories into the medulla as typed :Repository/:ContainerImage nodes. |
 | `hub_org` | `ORGTOOL` | Manage a Docker Hub organization: settings (restricted images), |
 | `hub_registry` | `REGISTRYTOOL` | Docker Registry v2 image operations (``registry-1.docker.io``): |
 | `hub_repos` | `REPOSTOOL` | Manage Docker Hub repositories: list/create/inspect repositories, |
@@ -235,7 +235,7 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
 
 > **Install the connector-focused `[mcp]` extra.** Examples use `dockerhub-api[mcp]` to add
 > FastMCP / FastAPI through `scion-sdk`; the required Scion SDK core
-> still carries `epistemic-graph[full]`. The `[agent-runtime]` extra additionally
+> still carries `medulla`. The `[agent-runtime]` extra additionally
 > enables model orchestration.
 
 #### stdio Transport (local IDEs — Cursor, Claude Desktop, VS Code)

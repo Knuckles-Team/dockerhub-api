@@ -1,4 +1,4 @@
-"""Native epistemic-graph typed-node ingestion -- Wire-First coverage for dockerhub-api.
+"""Native medulla typed-node ingestion -- Wire-First coverage for dockerhub-api.
 
 Exercises the real ``ingest_entities`` / ``ingest_repositories`` / ``ingest_tags`` seam
 against a fake ``scion_sdk.ingest`` transport (no engine required). The real
@@ -25,7 +25,7 @@ from dockerhub_api.kg_ingest import (
 
 
 class _FakeTransport:
-    """Records every submitted request; no epistemic-graph engine required."""
+    """Records every submitted request; no medulla engine required."""
 
     def __init__(self) -> None:
         self.requests: list[SourceIngestionRequest] = []
