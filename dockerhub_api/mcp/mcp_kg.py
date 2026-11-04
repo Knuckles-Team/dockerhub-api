@@ -1,4 +1,4 @@
-"""MCP tool for native Docker Hub → epistemic-graph ingestion.
+"""MCP tool for native Docker Hub → medulla ingestion.
 
 CONCEPT:AU-KG.ingest.enterprise-source-extractor — Wire-First native ingestion surface.
 Lists repositories (and optionally their tags) via the real Docker Hub client and pushes
@@ -63,7 +63,7 @@ def register_kg_tools(mcp: FastMCP):
             default=None, description="MCP context for progress reporting"
         ),
     ) -> Any:
-        """Natively ingest Docker Hub repositories into epistemic-graph as typed
+        """Natively ingest Docker Hub repositories into medulla as typed
         :Repository nodes (with their :Namespace and, optionally, :ContainerImage
         tag nodes). Lists via the real client and pushes through the fast engine
         client. CONCEPT:AU-KG.ingest.enterprise-source-extractor.
