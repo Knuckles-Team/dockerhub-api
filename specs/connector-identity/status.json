@@ -13,7 +13,8 @@
       "delivery_state": "VERIFIED",
       "landed_in": [
         "1464c37a15c3",
-        "27a0bc6e517e"
+        "27a0bc6e517e",
+        "ef73cc3a3c3c"
       ],
       "verified_by": [
         "tests/test_fleet_name.py:34"
