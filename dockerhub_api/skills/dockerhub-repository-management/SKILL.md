@@ -2,110 +2,55 @@
 name: dockerhub-repository-management
 skill_type: skill
 description: >-
-  Manage Docker Hub image repositories and tags via the dockerhub-api MCP server
-  — list/create/inspect repositories, browse tags, configure immutable-tag rules,
-  and grant teams repository permissions with the domain-typed `hub_repos` tool.
-  Use when the agent must provision an image repo, audit a namespace's
-  repositories, inspect a tag's digest/size/platform, or lock tags immutable. Do
-  NOT use for low-level registry manifest/blob operations or CVE scanning
-  (dockerhub-image-registry-scout), org/team/member administration
-  (dockerhub-org-administration), or pushing typed repos into the knowledge graph
-  (that is the internal `dockerhub_ingest_repositories` tool).
+  Create and lock Docker Hub release repositories, audit their tags, grant teams access and mirror the catalog into the knowledge graph through the dockerhub-mcp tools. Use when a release needs a repository or a tag must be verified. Not for image content (dockerhub-image-registry-scout) or people and tokens (dockerhub-org-administration).
 license: MIT
-tags: [dockerhub, repositories, tags, container-registry, mcp]
+tags: [dockerhub, repositories, tags]
 metadata:
   author: Knuckles-Team
-  version: '0.1.0'
+  version: '1.0.0'
 ---
-# Docker Hub Repository Management
+# Docker Hub repository management
 
-Domain-typed access to Docker Hub **image repositories and tags** under a
-namespace (`/v2/namespaces/{ns}/repositories`). Prefer the `hub_repos` tool over
-raw HTTP — it carries the namespace/repository conventions and returns
-repository- and tag-shaped records.
+Repositories live in a namespace (a user or organization). Every release repository is created private unless the person says otherwise and gets an immutable-tag rule.
 
-## When to use
-- List / audit the repositories in a namespace (name filter + ordering).
-- Create an image repository for a release (allowed by default).
-- Inspect one repository or one tag (digest, size, platform, last-pushed).
-- Configure or verify **immutable-tag** rules on a repository.
-- Grant a team `read`/`write`/`admin` on a repository.
+## Rules
 
-## When NOT to use
-- Registry v2 manifest/blob/digest operations or multi-arch inspect → the
-  `dockerhub-image-registry-scout` skill (`hub_registry`).
-- CVE / SBOM / policy analysis of an image → `dockerhub-image-registry-scout`
-  (`hub_scout`).
-- Org settings, members, invites, teams CRUD, tokens, SCIM →
-  `dockerhub-org-administration`.
-- Bulk-loading repositories as typed KG nodes → the internal
-  `dockerhub_ingest_repositories` tool (ingestion, not operations).
+- Check the repository exists (dockerhub_check_repository) before creating it.
+- Verify an immutable-tag rule with dockerhub_verify_immutable_tags before relying on it.
+- Never create a repository without an explicit is_private decision.
 
-## Prerequisites & environment
-Connect via the `mcp-client` skill against the **`dockerhub-api`** MCP server.
+## Task workflows
 
-| Variable | Required | Notes |
-|----------|----------|-------|
-| `DOCKER_HUB_USER` | ✅ | Docker Hub username |
-| `DOCKER_HUB_TOKEN` | ✅ | PAT or password |
-| `DOCKERHUB_URL` | optional | Defaults to `https://hub.docker.com` |
-| `DOCKERHUB_ALLOW_DESTRUCTIVE` | optional | Gate for destructive ops (default `False`) |
-| `DOCKERHUB_SSL_VERIFY` | optional | TLS verification toggle |
+### provision-release-repository
 
-`MCP_TOOL_MODE` (`condensed`|`verbose`|`both`) selects the condensed surface
-(used below) vs. the one-to-one verbose tools.
+Create an image repository for a release and lock its tags. Contract steps, in order:
 
-## Tools & actions
-Prefer the **condensed** tool; it takes `action` + a `params_json` **JSON string**
-whose keys are passed straight to the client method.
+1. `dockerhub_get_repositories`(namespace; optional name, ordering, page, page_size)
+2. `dockerhub_check_repository`(namespace, repository)
+3. `dockerhub_create_repository`(namespace, name; optional description, full_description, registry, is_private)
+4. `dockerhub_update_immutable_tags`(namespace, repository, enabled; optional rules)
+5. `dockerhub_verify_immutable_tags`(namespace, repository; optional rules, tags)
+6. `dockerhub_get_repository`(namespace, repository)
 
-| Condensed tool | Actions |
-|----------------|---------|
-| `hub_repos` | `list`, `create`, `get`, `check`, `list_tags`, `check_tags`, `get_tag`, `check_tag`, `set_immutable_tags`, `verify_immutable_tags`, `assign_group` |
+### audit-repository-tags
 
-### Key parameters
-- `namespace` — required for every action (the account/org owning the repo).
-- `repository` — required to target one repo (`get`, `list_tags`, `get_tag`, …).
-- `name` / `ordering` / `page` / `page_size` — `list` filters and pagination.
-- `enabled` + `rules` — `set_immutable_tags` payload.
-- `group_id` + `permission` — `assign_group` (`read`/`write`/`admin`).
+List a repository's tags and confirm each one exists. Contract steps, in order:
 
-## Recipes (`params_json`)
-List a namespace's repositories, newest first:
-```json
-{"namespace":"mycorp","ordering":"-last_updated","page_size":25}
-```
-Create a private repository:
-```json
-{"namespace":"mycorp","name":"api-gateway","is_private":true,"description":"Edge API gateway"}
-```
-Inspect one tag's digest / platform:
-```json
-{"namespace":"mycorp","repository":"api-gateway","tag":"v1.4.2"}
-```
-Lock semver tags immutable:
-```json
-{"namespace":"mycorp","repository":"api-gateway","enabled":true,"rules":["v*"]}
-```
-Grant a team write access:
-```json
-{"namespace":"mycorp","repository":"api-gateway","group_id":42,"permission":"write"}
-```
+1. `dockerhub_get_repository_tags`(namespace, repository; optional page, page_size)
+2. `dockerhub_get_repository_tag`(namespace, repository, tag)
+3. `dockerhub_check_repository_tag`(namespace, repository, tag)
+4. `dockerhub_check_repository_tags`(namespace, repository)
 
-## Gotchas
-- `params_json` is a **string** of JSON, not an object — serialize it.
-- Every action needs an explicit `namespace`; there is no implicit "current user".
-- `create` is intentionally **not** destructive-gated (it is the release
-  provisioning path); deletes and org-settings writes live elsewhere and require
-  `DOCKERHUB_ALLOW_DESTRUCTIVE=True`.
-- Tag records nest per-architecture image entries under `images[]` (each with its
-  own `digest`/`architecture`/`size`); the top-level `digest` is the manifest-list
-  digest for multi-arch tags.
-- Prefer a `name` filter + a sane `page_size`; unbounded namespace listings are slow.
+### ingest-repository-catalog
 
-## Related
-- Registry-level manifests/blobs and Scout CVE intelligence →
-  `dockerhub-image-registry-scout`.
-- Org/team/member/token/SCIM administration → `dockerhub-org-administration`.
-- The internal `dockerhub_ingest_repositories` tool pulls these same repositories
-  into the knowledge graph as typed `:Repository` / `:ContainerImage` nodes.
+Mirror the repositories of a namespace into the knowledge graph. Contract steps, in order:
+
+1. `dockerhub_get_repositories`(namespace; optional name, ordering, page, page_size)
+2. `dockerhub_ingest_repositories`(namespace; optional name, ordering, page, page_size, include_tags)
+
+### grant-team-repository-access
+
+Give a team a permission on a repository. Contract steps, in order:
+
+1. `dockerhub_get_groups`(org; optional search, page, page_size)
+2. `dockerhub_assign_repository_group`(namespace, repository, group_id, permission)

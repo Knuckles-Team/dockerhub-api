@@ -20,7 +20,7 @@ class DockerHubApiAuditLogs(DockerHubApiBase):
     def get_audit_logs(
         self,
         account: str,
-        action: str | None = None,
+        audit_action: str | None = None,
         name: str | None = None,
         actor: str | None = None,
         from_date: str | None = None,
@@ -30,12 +30,12 @@ class DockerHubApiAuditLogs(DockerHubApiBase):
     ) -> dict[str, Any]:
         """List audit-log events for a namespace.
 
-        Filters: ``action``, ``name`` (object), ``actor`` (username), and a
+        Filters: ``audit_action``, ``name`` (object), ``actor`` (username), and a
         ``from_date``/``to_date`` RFC 3339 window (sent as ``from``/``to``).
         """
         model = AuditLogModel(
             account=account,
-            action=action,
+            action=audit_action,
             name=name,
             actor=actor,
             from_date=from_date,

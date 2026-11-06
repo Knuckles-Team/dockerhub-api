@@ -2,104 +2,108 @@
 name: dockerhub-org-administration
 skill_type: skill
 description: >-
-  Administer a Docker Hub organization via the dockerhub-api MCP server — manage
-  org settings and restricted-images policy, members and invites (`hub_org`),
-  teams/groups and their membership (`hub_teams`), personal and organization
-  access tokens (`hub_auth`), SCIM user provisioning (`hub_scim`), and audit logs
-  (`hub_audit`). Use when the agent must onboard/offboard members, provision teams
-  and tokens, enforce image policy, or review the audit trail. Do NOT use for
-  repository/tag operations (dockerhub-repository-management) or registry/CVE
-  inspection (dockerhub-image-registry-scout).
+  Administer a Docker Hub organization through the dockerhub-mcp tools: members and invitations, teams, image policy, personal and organization access tokens, SCIM users and the audit trail. Use for access reviews and joiner-mover-leaver work. Not for image content.
 license: MIT
-tags: [dockerhub, organization, teams, tokens, scim, audit, mcp]
+tags: [dockerhub, organization, teams, tokens, scim]
 metadata:
   author: Knuckles-Team
-  version: '0.1.0'
+  version: '1.0.0'
 ---
-# Docker Hub Organization Administration
+# Docker Hub organization administration
 
-Identity, access, and governance for a Docker Hub **organization** — settings,
-members, teams, access tokens, SCIM provisioning, and the audit log. Prefer the
-domain-typed tools; several actions are destructive and gated.
+Organization data lives under the org namespace. Token values are returned once at creation and are redacted everywhere else.
 
-## When to use
-- Read/update org settings (the **restricted images** policy).
-- List/invite/remove members; resend or cancel invites.
-- Create/inspect teams (groups) and manage their membership.
-- Mint, list, or revoke personal (PAT) and organization (OAT) access tokens.
-- Provision users via **SCIM 2.0** (list/get/create/update).
-- Review the org **audit log** and the available audit actions.
+## Rules
 
-## When NOT to use
-- Repositories, tags, immutable tags, repo-team permission grants →
-  `dockerhub-repository-management` (`hub_repos assign_group`).
-- Registry manifests/blobs or Docker Scout CVEs →
-  `dockerhub-image-registry-scout`.
-- Destructive writes (member removal, invite/token deletion, org-settings write)
-  unless `DOCKERHUB_ALLOW_DESTRUCTIVE=True`.
+- Export members before any bulk change and use dry_run on bulk invites.
+- Removals and deletions need the person's agreement and confirm=true.
+- Never print a token or secret value after its creation response.
 
-## Prerequisites & environment
-Connect via the `mcp-client` skill against the **`dockerhub-api`** MCP server.
+## Task workflows
 
-| Variable | Required | Notes |
-|----------|----------|-------|
-| `DOCKER_HUB_USER` | ✅ | Docker Hub username (org owner/editor for writes) |
-| `DOCKER_HUB_TOKEN` | ✅ | PAT or password |
-| `DOCKERHUB_URL` | optional | Defaults to `https://hub.docker.com` |
-| `DOCKERHUB_ALLOW_DESTRUCTIVE` | optional | Gate for removals/deletes/settings writes |
+### review-organization-audit-trail
 
-`MCP_TOOL_MODE` (`condensed`|`verbose`|`both`) selects the condensed surface.
+Read the audit events of a namespace. Contract steps, in order:
 
-## Tools & actions
-| Condensed tool | Actions |
-|----------------|---------|
-| `hub_org` | `get_settings`, `update_settings`, `list_members`, `export_members`, `update_member`, `remove_member`, `list_invites`, `delete_invite`, `resend_invite`, `bulk_invite` |
-| `hub_teams` | `list`, `create`, `get`, `update`, `patch`, `delete`, `list_members`, `add_member`, `remove_member` |
-| `hub_auth` | `create_token`, `login`, `two_factor_login`, `list_pats`, `create_pat`, `get_pat`, `update_pat`, `delete_pat`, `list_oats`, `create_oat`, `get_oat`, `update_oat`, `delete_oat` |
-| `hub_scim` | `service_provider_config`, `resource_types`, `resource_type`, `schemas`, `schema`, `list_users`, `get_user`, `create_user`, `update_user` |
-| `hub_audit` | `logs`, `actions` |
+1. `dockerhub_get_audit_log_actions`(account)
+2. `dockerhub_get_audit_logs`(account; optional audit_action, name, actor, from_date, to_date, page)
 
-### Key parameters
-- `org` — the organization name (required for `hub_org` / `hub_audit` actions).
-- `username` / `role` — `update_member`, `add_member` (`owner`/`editor`/`member`).
-- `invitees` + `team` + `role` — `bulk_invite` (use `dry_run` to validate).
-- `scopes` — PAT/OAT creation (e.g. `repo:read`, `repo:write`).
+### manage-organization-members
 
-## Recipes (`params_json`)
-List org members ordered by role:
-```json
-{"org":"mycorp","role":"owner","page_size":50}
-```
-Enforce restricted images (block non-approved pulls):
-```json
-{"org":"mycorp","restricted_images_enabled":true,"allow_official_images":true,"allow_verified_publishers":false}
-```
-Bulk-invite editors to a team (validate first):
-```json
-{"org":"mycorp","invitees":["a@corp.com","b@corp.com"],"team":"backend","role":"member","dry_run":true}
-```
-Create a read-only PAT:
-```json
-{"token_label":"ci-readonly","scopes":["repo:read"]}
-```
-Review recent audit events:
-```json
-{"org":"mycorp"}
-```
+Invite, list, re-role and remove organization members. Contract steps, in order:
 
-## Gotchas
-- `params_json` is a **string** of JSON, not an object.
-- `create_pat` / `create_oat` return the **plaintext token exactly once** — it is
-  the one secret field allowed through the redactor on creation; store it
-  immediately, subsequent reads never expose it.
-- `remove_member`, `delete_invite`, `delete_pat`/`delete_oat`, `delete` (team), and
-  `update_settings` are **destructive** — they require `DOCKERHUB_ALLOW_DESTRUCTIVE=True`.
-- `role` values are `owner` / `editor` / `member`; team membership is separate from
-  org membership.
-- SCIM writes assume the org has SSO/SCIM provisioning enabled.
+1. `dockerhub_get_org_members`(org; optional search, member_type, role, page, page_size)
+2. `dockerhub_export_org_members`(org)
+3. `dockerhub_bulk_invite`(org, invitees; optional team, role, dry_run)
+4. `dockerhub_get_org_invites`(org)
+5. `dockerhub_resend_invite`(invite_id)
+6. `dockerhub_delete_invite`(invite_id; optional confirm) (destructive: pass confirm=true only after the person agrees)
+7. `dockerhub_update_org_member`(org, username, role)
+8. `dockerhub_remove_org_member`(org, username; optional confirm) (destructive: pass confirm=true only after the person agrees)
 
-## Related
-- Repository/tag operations → `dockerhub-repository-management`.
-- Registry + Scout inspection → `dockerhub-image-registry-scout`.
-- Members and teams surface in the KG as `:Person` / `:Team` / `:Organization`
-  nodes federated by the dockerhub ontology.
+### manage-teams
+
+Create teams, change their membership and delete them. Contract steps, in order:
+
+1. `dockerhub_get_groups`(org; optional search, page, page_size)
+2. `dockerhub_get_group`(org, group_name)
+3. `dockerhub_create_group`(org, name; optional description)
+4. `dockerhub_update_group`(org, group_name; optional name, description)
+5. `dockerhub_patch_group`(org, group_name; optional name, description)
+6. `dockerhub_get_group_members`(org, group_name; optional search, page, page_size)
+7. `dockerhub_add_group_member`(org, group_name, member)
+8. `dockerhub_remove_group_member`(org, group_name, username; optional confirm) (destructive: pass confirm=true only after the person agrees)
+9. `dockerhub_delete_group`(org, group_name; optional confirm) (destructive: pass confirm=true only after the person agrees)
+
+### set-organization-image-policy
+
+Read and change which image sources the organization may use. Contract steps, in order:
+
+1. `dockerhub_get_org_settings`(org)
+2. `dockerhub_update_org_settings`(org, restricted_images_enabled; optional allow_official_images, allow_verified_publishers)
+
+### manage-organization-access-tokens
+
+Issue, review, change and revoke organization access tokens. Contract steps, in order:
+
+1. `dockerhub_get_org_access_tokens`(org; optional page, page_size)
+2. `dockerhub_get_org_access_token`(org, token_id)
+3. `dockerhub_create_org_access_token`(org, label; optional description, expires_at, scopes, resources)
+4. `dockerhub_update_org_access_token`(org, token_id; optional label, description, is_active)
+5. `dockerhub_delete_org_access_token`(org, token_id; optional confirm) (destructive: pass confirm=true only after the person agrees)
+
+### manage-personal-access-tokens
+
+Sign in, issue, review, change and revoke personal access tokens. Contract steps, in order:
+
+1. `dockerhub_login`(username, password)
+2. `dockerhub_two_factor_login`(login_2fa_token, code)
+3. `dockerhub_create_auth_token`(identifier, secret)
+4. `dockerhub_get_access_tokens`(; optional page, page_size)
+5. `dockerhub_get_access_token`(uuid)
+6. `dockerhub_create_access_token`(token_label, scopes)
+7. `dockerhub_update_access_token`(uuid; optional token_label, is_active)
+8. `dockerhub_delete_access_token`(uuid; optional confirm) (destructive: pass confirm=true only after the person agrees)
+9. `hub_admin_whoami`(no arguments)
+10. `hub_admin_rate_limit`(no arguments)
+
+### provision-scim-users
+
+Read the SCIM schema and create or replace provisioned users. Contract steps, in order:
+
+1. `dockerhub_get_scim_service_provider_config`(no arguments)
+2. `dockerhub_get_scim_resource_types`(no arguments)
+3. `dockerhub_get_scim_resource_type`(name)
+4. `dockerhub_get_scim_schemas`(no arguments)
+5. `dockerhub_get_scim_schema`(schema_id)
+6. `dockerhub_get_scim_users`(; optional start_index, count, filter, sort_by, sort_order)
+7. `dockerhub_get_scim_user`(user_id)
+8. `dockerhub_create_scim_user`(user_name; optional given_name, family_name, email, active)
+9. `dockerhub_replace_scim_user`(user_id, user_name; optional given_name, family_name, email, active)
+
+### grant-team-repository-access
+
+Give a team a permission on a repository. Contract steps, in order:
+
+1. `dockerhub_get_groups`(org; optional search, page, page_size)
+2. `dockerhub_assign_repository_group`(namespace, repository, group_id, permission)
