@@ -1,6 +1,6 @@
 """MCP tool for Docker Hub client telemetry and identity introspection.
 
-CONCEPT:DH-OS.audit.action-routed-mcp-surface — typed per-action MCP surface.
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — typed MCP surface.
 CONCEPT:DH-OS.governance.rate-limit-telemetry-every — rate-limit telemetry.
 """
 

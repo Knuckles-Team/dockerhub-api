@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.10] - 2026-11-06
+
+### Changed
+- Connector surface: full agent-definition prompts (operator, release engineer, organization administrator, security analyst), task workflow skills that name every served tool, tool-use contracts for all 82 tools, data locations and business roles.
+- Require `scion-sdk>=0.9.0`; `uv.lock` relocked.
+- `dockerhub_get_audit_logs` takes `audit_action` (was `action`) for the audit event filter.
+
+### Removed
+- The unregistered action-routed `hub_*` tool modules; the typed per-operation tools remain the surface.
+
 ## [1.3.9] - 2026-10-30
 
 ### Changed

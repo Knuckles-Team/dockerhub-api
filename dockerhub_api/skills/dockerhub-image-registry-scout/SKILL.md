@@ -2,106 +2,62 @@
 name: dockerhub-image-registry-scout
 skill_type: skill
 description: >-
-  Inspect container images at the OCI registry level and analyze their security
-  posture via the dockerhub-api MCP server — resolve manifests/digests, list
-  multi-arch platforms, read image configs and OCI referrers with `hub_registry`,
-  and pull Docker Scout CVE/SBOM/policy intelligence with `hub_scout`. Use when
-  the agent must resolve a tag to a digest, inspect a multi-arch image, diff two
-  images, or get the vulnerability roll-up for an image. Do NOT use for
-  repository/tag CRUD or immutable tags (dockerhub-repository-management), or for
-  org/team/token administration (dockerhub-org-administration).
+  Inspect OCI images at the registry level, publish or remove manifests and blobs, and read Docker Scout vulnerability, SBOM and policy results through the dockerhub-mcp tools. Use to resolve a tag to a digest, inspect a multi-arch image, or assess an image. Not for repository or member administration.
 license: MIT
-tags: [dockerhub, registry, oci, docker-scout, vulnerabilities, mcp]
+tags: [dockerhub, registry, oci, scout]
 metadata:
   author: Knuckles-Team
-  version: '0.1.0'
+  version: '1.0.0'
 ---
-# Docker Hub Image Registry & Scout
+# Docker Hub image registry and Scout
 
-Low-level **Registry v2** image operations (`hub_registry`, against
-`registry-1.docker.io`) plus **Docker Scout** security intelligence (`hub_scout`).
-These target different hosts and auth models than the management API — Registry
-uses per-repository scoped tokens; Scout uses the Scout API.
+The registry tools talk to the OCI registry with per-repository tokens; the Scout tools talk to the Scout API. Both address images by repo (for example library/nginx) and reference (tag or digest).
 
-## When to use
-- Resolve a tag → content digest, or list the platforms in a manifest list / OCI index.
-- Read an image manifest, config blob, or OCI referrers (SBOM/attestation links).
-- `inspect` a multi-arch image in one call (manifest + resolved platforms).
-- Pull a Docker Scout **vulnerability summary**, CVE list, SBOM, or policy evaluation.
-- Compare two images (`hub_scout` `compare`) for a base-image bump decision.
+## Rules
 
-## When NOT to use
-- List/create repositories, browse tags, immutable tags, team perms →
-  `dockerhub-repository-management` (`hub_repos`).
-- Org settings, members, invites, teams, access tokens, SCIM →
-  `dockerhub-org-administration`.
-- Destructive registry writes (`delete_manifest`, `delete_blob`, uploads) unless
-  `DOCKERHUB_ALLOW_DESTRUCTIVE=True` — prefer read/inspect actions.
+- Resolve a tag to a digest first and report the digest, never only the tag.
+- Registry deletes and manifest pushes change released content; ask first and pass confirm=true only on agreement.
+- Read-only unless the person asks to publish or delete.
 
-## Prerequisites & environment
-Connect via the `mcp-client` skill against the **`dockerhub-api`** MCP server.
+## Task workflows
 
-| Variable | Required | Notes |
-|----------|----------|-------|
-| `DOCKER_HUB_USER` | ✅ | Docker Hub username |
-| `DOCKER_HUB_TOKEN` | ✅ | PAT or password (exchanged for a registry scope token) |
-| `DOCKER_REGISTRY_URL` | optional | Defaults to `https://registry-1.docker.io` |
-| `DOCKER_SCOUT_URL` | optional | Defaults to `https://api.scout.docker.com` |
-| `DOCKERHUB_ALLOW_DESTRUCTIVE` | optional | Gate for registry deletes/uploads |
+### inspect-image
 
-`MCP_TOOL_MODE` (`condensed`|`verbose`|`both`) selects the condensed surface.
+Resolve a tag to a digest and read the manifest, platforms and config of an image. Contract steps, in order:
 
-## Tools & actions
-| Condensed tool | Actions |
-|----------------|---------|
-| `hub_registry` | `api_version`, `list_tags`, `get_manifest`, `check_manifest`, `resolve_digest`, `list_platforms`, `get_config`, `inspect`, `get_blob`, `check_blob`, `list_referrers`, `delete_manifest`, `delete_blob`, `start_upload`, `upload_chunk`, `complete_upload`, `mount_blob`, `put_manifest` |
-| `hub_scout` | `summary`, `cves`, `vulnerabilities`, `sbom`, `compare`, `policies`, `policy_evaluation` |
+1. `dockerhub_registry_api_version`(no arguments)
+2. `dockerhub_registry_list_tags`(repo; optional n, last)
+3. `dockerhub_registry_resolve_digest`(repo, reference)
+4. `dockerhub_registry_check_manifest`(repo, reference)
+5. `dockerhub_registry_get_manifest`(repo, reference; optional accept)
+6. `dockerhub_registry_list_platforms`(repo, reference)
+7. `dockerhub_registry_get_config`(repo, reference)
+8. `dockerhub_registry_inspect`(repo, reference; optional include_config)
+9. `dockerhub_registry_check_blob`(repo, digest)
+10. `dockerhub_registry_get_blob`(repo, digest)
+11. `dockerhub_registry_list_referrers`(repo, digest; optional artifact_type)
 
-### Key parameters
-- `repository` — namespaced repo path, e.g. `library/nginx` (official images live
-  under `library/`).
-- `reference` — a tag (`1.27`) or a digest (`sha256:...`) for manifest/config actions.
-- `digest` — content digest for `get_blob` / `list_referrers`.
-- Scout actions take `repository` + `reference`/`digest` identifying the image.
+### publish-image-content
 
-## Recipes (`params_json`)
-Resolve a tag to its digest:
-```json
-{"repository":"library/nginx","reference":"1.27"}
-```
-Inspect a multi-arch image (manifest + platforms):
-```json
-{"repository":"library/nginx","reference":"1.27"}
-```
-List the platforms in a manifest list:
-```json
-{"repository":"library/nginx","reference":"1.27"}
-```
-Docker Scout vulnerability summary for an image:
-```json
-{"repository":"mycorp/api-gateway","reference":"v1.4.2"}
-```
-Compare two images for a base bump:
-```json
-{"repository":"mycorp/api-gateway","reference":"v1.4.2","to":"v1.5.0"}
-```
+Push a manifest and its blobs to a repository, or remove them. Contract steps, in order:
 
-## Gotchas
-- `params_json` is a **string** of JSON, not an object.
-- Docker Official Images are under the `library/` namespace (`library/nginx`, not
-  `nginx`).
-- Registry auth is a **per-repository scope token** minted from your Hub
-  credentials — a token that reads repo A cannot read repo B; the client handles
-  the exchange per call.
-- Multi-arch tags return a **manifest list / OCI index**; use `list_platforms` or
-  `inspect` to resolve the per-arch child digests before `get_config`.
-- Scout actions require a **Scout-enabled** account/organization; expect an
-  empty/`error` envelope otherwise.
-- `delete_*` and upload actions are destructive-gated behind
-  `DOCKERHUB_ALLOW_DESTRUCTIVE`.
+1. `dockerhub_registry_start_upload`(repo)
+2. `dockerhub_registry_upload_chunk`(repo, location, chunk; optional content_range)
+3. `dockerhub_registry_complete_upload`(repo, location, digest; optional final_chunk)
+4. `dockerhub_registry_mount_blob`(repo, digest, from_repo)
+5. `dockerhub_registry_put_manifest`(repo, reference, manifest, media_type)
+6. `dockerhub_registry_delete_manifest`(repo, reference; optional confirm) (destructive: pass confirm=true only after the person agrees)
+7. `dockerhub_registry_delete_blob`(repo, digest; optional confirm) (destructive: pass confirm=true only after the person agrees)
 
-## Related
-- Repository/tag CRUD and immutable tags → `dockerhub-repository-management`.
-- Org/team/token administration → `dockerhub-org-administration`.
-- Ingested `:ContainerImage` nodes (digest/architecture/size) come from the
-  `dockerhub_ingest_repositories` tool with `include_tags`.
+### assess-image-vulnerabilities
+
+Read the vulnerability, SBOM and policy picture of an image and compare two images. Contract steps, in order:
+
+1. `dockerhub_scout_get_image_summary`(repo; optional reference, org)
+2. `dockerhub_scout_list_vulnerabilities`(repo; optional reference, org, severity)
+3. `dockerhub_scout_get_cves`(repo; optional reference, org, severity)
+4. `dockerhub_scout_get_sbom`(repo; optional reference, org, sbom_format)
+5. `dockerhub_scout_list_policies`(org)
+6. `dockerhub_scout_get_policy_evaluation`(repo; optional reference, org)
+7. `dockerhub_scout_compare`(repo, base_ref, target_ref; optional org)
+

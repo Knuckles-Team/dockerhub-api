@@ -4,7 +4,7 @@
 def test_audit_logs_filters(hub, api):
     result = api.get_audit_logs(
         account="acme",
-        action="repo.create",
+        audit_action="repo.create",
         name="acme/app",
         actor="tester",
         from_date="2026-06-01T00:00:00Z",

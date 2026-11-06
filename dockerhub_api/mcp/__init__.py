@@ -1,11 +1,10 @@
 """MCP tool registration modules for dockerhub-api.
 
-CONCEPT:DH-OS.audit.action-routed-mcp-surface — action-routed MCP surface. Each module registers one
-consolidated, action-routed tool; this package provides the shared client
+CONCEPT:DH-OS.audit.action-routed-mcp-surface — typed MCP surface. The per-operation tools come from the
+client methods; this package provides the shared client
 resolution, parameter parsing, secret redaction, and error-envelope helpers.
 """
 
-import json
 from typing import Any
 
 from scion_sdk.exceptions import (
@@ -45,14 +44,6 @@ def get_scout_client():
     return _factory()
 
 
-def parse_params(params_json: str) -> dict[str, Any]:
-    """Parse the ``params_json`` tool argument, dropping ``None`` values."""
-    kwargs = json.loads(params_json) if params_json else {}
-    if not isinstance(kwargs, dict):
-        raise ValueError("params_json must decode to a JSON object")
-    return {k: v for k, v in kwargs.items() if v is not None}
-
-
 def redact_secrets(data: Any, allow_keys: set[str] | None = None) -> Any:
     """Recursively mask secret-bearing fields in a tool result.
 
@@ -90,33 +81,8 @@ HANDLED_ERRORS = (
 )
 
 
-def run_action(handlers: dict, action: str, kwargs: dict[str, Any]) -> Any:
-    """Dispatch ``action`` to its handler, mapping errors to the envelope."""
-    handler = handlers.get(action)
-    if handler is None:
-        return {
-            "error": {
-                "type": "UnknownAction",
-                "message": f"Unknown action: {action!r}. "
-                f"Valid actions: {sorted(handlers)}",
-            }
-        }
-    try:
-        return handler(**kwargs)
-    except HANDLED_ERRORS as error:
-        return error_envelope(error)
-
-
 from dockerhub_api.mcp.mcp_admin import register_admin_tools
-from dockerhub_api.mcp.mcp_audit import register_audit_tools
-from dockerhub_api.mcp.mcp_auth import register_auth_tools
 from dockerhub_api.mcp.mcp_kg import register_kg_tools
-from dockerhub_api.mcp.mcp_org import register_org_tools
-from dockerhub_api.mcp.mcp_registry import register_registry_tools
-from dockerhub_api.mcp.mcp_repos import register_repos_tools
-from dockerhub_api.mcp.mcp_scim import register_scim_tools
-from dockerhub_api.mcp.mcp_scout import register_scout_tools
-from dockerhub_api.mcp.mcp_teams import register_teams_tools
 
 __all__ = [
     "HANDLED_ERRORS",
@@ -126,17 +92,7 @@ __all__ = [
     "get_hub_client",
     "get_registry_client",
     "get_scout_client",
-    "parse_params",
     "redact_secrets",
     "register_admin_tools",
-    "register_audit_tools",
-    "register_auth_tools",
     "register_kg_tools",
-    "register_org_tools",
-    "register_registry_tools",
-    "register_repos_tools",
-    "register_scim_tools",
-    "register_scout_tools",
-    "register_teams_tools",
-    "run_action",
 ]

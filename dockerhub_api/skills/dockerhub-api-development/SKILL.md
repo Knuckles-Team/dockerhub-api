@@ -16,14 +16,14 @@ metadata:
 
 Use this skill for changes inside the dockerhub-api package. The connector
 exposes Docker Hub management, registry, Scout, and knowledge-graph operations
-through typed HTTP clients, action-routed MCP tools, an A2A agent, and packaged
+through typed HTTP clients, typed per-operation MCP tools, an A2A agent, and packaged
 resource content. Keep those surfaces aligned when a change crosses a boundary.
 
 ## Repository map
 
 - dockerhub_api/api/ contains domain client mixins composed into the Api facade.
 - dockerhub_api/auth.py owns JWT minting, caching, refresh, and client setup.
-- dockerhub_api/mcp/ registers domain tools and keeps actions routed through the
+- dockerhub_api/mcp/ registers domain tools and exposes one typed tool per client method through the
   corresponding client method.
 - dockerhub_api/skills/, prompts/, ontology/, and connectors/ are packaged
   resources exposed by the connector entry point.
@@ -36,7 +36,7 @@ resource content. Keep those surfaces aligned when a change crosses a boundary.
 1. Work from a real worktree based on the repository's current origin/main.
 2. Find the owning row under specs/ before adding behavior, and preserve the
    existing CONCEPT: registry when a domain capability is involved.
-3. Trace a changed action from its Pydantic input model through the MCP router,
+3. Trace a changed operation from its Pydantic input model through the MCP router,
    client mixin, auth lifecycle, and response envelope. Do not duplicate an
    existing HTTP path.
 4. Keep credentials and external Docker Hub calls out of tests; extend the
@@ -49,9 +49,9 @@ resource content. Keep those surfaces aligned when a change crosses a boundary.
 - Keep destructive operations behind DockerHubApiBase._guard_destructive and
   never persist or return bearer tokens except the documented one-time create
   response.
-- Use Pydantic input and response models, action-routed tools, and the shared
+- Use Pydantic input and response models, typed tools, and the shared
   agent-utilities server/agent factories.
-- Add or update a focused test when behavior changes. Cover invalid action or
+- Add or update a focused test when behavior changes. Cover invalid
   parameters and the successful response shape.
 - Keep all package resources under the existing package-data globs so an sdist
   and wheel expose the same skills, prompts, ontology, agent data, and
