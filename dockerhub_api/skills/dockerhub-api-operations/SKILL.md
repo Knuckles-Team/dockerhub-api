@@ -72,4 +72,3 @@ Invite, list, re-role and remove organization members. Contract steps, in order:
 6. `dockerhub_delete_invite`(invite_id; optional confirm) (destructive: pass confirm=true only after the person agrees)
 7. `dockerhub_update_org_member`(org, username, role)
 8. `dockerhub_remove_org_member`(org, username; optional confirm) (destructive: pass confirm=true only after the person agrees)
-

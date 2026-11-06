@@ -60,4 +60,3 @@ Read the vulnerability, SBOM and policy picture of an image and compare two imag
 5. `dockerhub_scout_list_policies`(org)
 6. `dockerhub_scout_get_policy_evaluation`(repo; optional reference, org)
 7. `dockerhub_scout_compare`(repo, base_ref, target_ref; optional org)
-

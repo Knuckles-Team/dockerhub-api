@@ -107,4 +107,3 @@ Give a team a permission on a repository. Contract steps, in order:
 
 1. `dockerhub_get_groups`(org; optional search, page, page_size)
 2. `dockerhub_assign_repository_group`(namespace, repository, group_id, permission)
-
