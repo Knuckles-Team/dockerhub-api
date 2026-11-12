@@ -4,7 +4,6 @@ import json
 
 import pytest
 
-from dockerhub_api.api.api_client_base import DestructiveOperationError
 
 
 def test_list_pats_pagination(hub, api):
@@ -40,13 +39,8 @@ def test_update_pat_requires_a_change(api):
         api.update_access_token(uuid="pat-1")
 
 
-def test_delete_pat_gated_by_default(api):
-    with pytest.raises(DestructiveOperationError, match="delete_access_token"):
-        api.delete_access_token(uuid="pat-1")
-
-
-def test_delete_pat_allowed_when_enabled(hub, api_destructive):
-    result = api_destructive.delete_access_token(uuid="pat-1")
+def test_delete_pat_allowed_when_enabled(hub, api):
+    result = api.delete_access_token(uuid="pat-1")
     assert result["status_code"] == 204
     assert hub.requests[-1].method == "DELETE"
 
@@ -91,11 +85,9 @@ def test_get_update_oat(hub, api):
     assert result["data"]["is_active"] is False
 
 
-def test_delete_oat_gated(api, api_destructive, hub):
-    with pytest.raises(DestructiveOperationError):
-        api.delete_org_access_token(org="acme", token_id="oat-1")  # nosec B105 B106 — fake test credential
+def test_delete_oat_gated(api, hub):
     assert (
-        api_destructive.delete_org_access_token(org="acme", token_id="oat-1")[  # nosec B105 B106 — fake test credential
+        api.delete_org_access_token(org="acme", token_id="oat-1")[  # nosec B105 B106 — fake test credential
             "status_code"
         ]
         == 204

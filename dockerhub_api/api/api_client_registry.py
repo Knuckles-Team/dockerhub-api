@@ -6,14 +6,16 @@ multi-arch platform resolution, digest resolution, and (gated) deletes.
 CONCEPT:DH-OS.governance.oci-referrers-attestation-discovery — OCI Referrers / attestation discovery.
 CONCEPT:DH-OS.governance.chunked-blob-push-upload — chunked blob push (upload session + manifest put).
 
-Pushes, deletes, and blob uploads are destructive and gated by
-``allow_destructive`` (``DOCKERHUB_ALLOW_DESTRUCTIVE``). ``_catalog`` is
+Pushes, deletes, and blob uploads are destructive: the SDK
+asks the caller to confirm each. ``_catalog`` is
 intentionally omitted: Docker Hub does not support registry-wide catalog
 listing (it requires a registry-scoped token the Hub token service won't issue).
 """
 
 import json as _json
 from typing import Any
+
+from scion_sdk.mcp.destructive import destructive_operation
 
 from dockerhub_api.api.api_client_registry_base import (
     ACCEPT_MANIFESTS,
@@ -96,6 +98,7 @@ class RegistryApi(RegistryApiBase):
         }
         return envelope
 
+    @destructive_operation
     def put_manifest(
         self,
         repo: str,
@@ -104,7 +107,6 @@ class RegistryApi(RegistryApiBase):
         media_type: str,
     ) -> dict[str, Any]:
         """``PUT /v2/{repo}/manifests/{reference}`` — push a manifest (gated)."""
-        self._guard_destructive("put_manifest")
         body = manifest if isinstance(manifest, str) else _json.dumps(manifest)
         return self._registry_request(
             "PUT",
@@ -115,13 +117,13 @@ class RegistryApi(RegistryApiBase):
             content_type=media_type,
         )
 
+    @destructive_operation
     def delete_manifest(self, repo: str, reference: str) -> dict[str, Any]:
         """``DELETE /v2/{repo}/manifests/{digest}`` — delete a tag/manifest (gated).
 
         Docker Hub requires deletion by digest; pass a tag and it is resolved
         to its digest first.
         """
-        self._guard_destructive("delete_manifest")
         target = reference
         if not reference.startswith("sha256:"):
             resolved = self.resolve_digest(repo, reference)
@@ -140,13 +142,13 @@ class RegistryApi(RegistryApiBase):
         """``HEAD /v2/{repo}/blobs/{digest}`` — blob existence check."""
         return self._registry_exists(repo, f"/blobs/{digest}")
 
+    @destructive_operation
     def delete_blob(self, repo: str, digest: str) -> dict[str, Any]:
         """``DELETE /v2/{repo}/blobs/{digest}`` — delete a blob (gated).
 
         Often returns ``405`` on Docker Hub (blob delete disabled); the status
         is surfaced cleanly rather than masked.
         """
-        self._guard_destructive("delete_blob")
         return self._registry_request(
             "DELETE",
             repo,
@@ -293,13 +295,14 @@ class RegistryApi(RegistryApiBase):
 
     # ------------------------------- push -------------------------------- #
 
+    @destructive_operation
     def start_upload(self, repo: str) -> dict[str, Any]:
         """``POST /v2/{repo}/blobs/uploads/`` — open a blob upload session (gated)."""
-        self._guard_destructive("start_upload")
         return self._registry_request(
             "POST", repo, "/blobs/uploads/", scope_actions="pull,push"
         )
 
+    @destructive_operation
     def upload_chunk(
         self,
         repo: str,
@@ -308,7 +311,6 @@ class RegistryApi(RegistryApiBase):
         content_range: str | None = None,
     ) -> dict[str, Any]:
         """``PATCH {location}`` — upload one blob chunk (gated)."""
-        self._guard_destructive("upload_chunk")
         extra = {"Content-Range": content_range} if content_range else None
         return self._registry_request(
             "PATCH",
@@ -320,6 +322,7 @@ class RegistryApi(RegistryApiBase):
             extra_headers=extra,
         )
 
+    @destructive_operation
     def complete_upload(
         self,
         repo: str,
@@ -328,7 +331,6 @@ class RegistryApi(RegistryApiBase):
         final_chunk: bytes | None = None,
     ) -> dict[str, Any]:
         """``PUT {location}?digest=`` — finalize a blob upload (gated)."""
-        self._guard_destructive("complete_upload")
         return self._registry_request(
             "PUT",
             repo,
@@ -339,9 +341,9 @@ class RegistryApi(RegistryApiBase):
             content_type=OCTET_STREAM,
         )
 
+    @destructive_operation
     def mount_blob(self, repo: str, digest: str, from_repo: str) -> dict[str, Any]:
         """``POST /v2/{repo}/blobs/uploads/?mount=&from=`` — cross-repo mount (gated)."""
-        self._guard_destructive("mount_blob")
         return self._registry_request(
             "POST",
             repo,

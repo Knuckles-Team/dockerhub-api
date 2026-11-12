@@ -7,6 +7,8 @@ org-settings writes).
 
 from typing import Any
 
+from scion_sdk.mcp.destructive import destructive_operation
+
 from dockerhub_api.api.api_client_base import DockerHubApiBase
 from dockerhub_api.dockerhub_input_models import (
     BulkInviteModel,
@@ -37,6 +39,7 @@ class DockerHubApiOrgs(DockerHubApiBase):
         envelope["data"] = validate_lenient(OrgSettings, envelope["data"])
         return envelope
 
+    @destructive_operation
     def update_org_settings(
         self,
         org: str,
@@ -50,7 +53,6 @@ class DockerHubApiOrgs(DockerHubApiBase):
         org-approved images, with carve-outs for Docker Official Images and
         Verified Publisher images.
         """
-        self._guard_destructive("update_org_settings")
         model = OrgSettingsModel(
             org=org,
             restricted_images_enabled=restricted_images_enabled,
@@ -104,9 +106,9 @@ class DockerHubApiOrgs(DockerHubApiBase):
         envelope["data"] = validate_lenient(OrgMember, envelope["data"])
         return envelope
 
+    @destructive_operation
     def remove_org_member(self, org: str, username: str) -> dict[str, Any]:
         """Remove a member from the organization. Destructive — gated."""
-        self._guard_destructive("remove_org_member")
         model = OrgMemberModel(org=org, username=username)
         return self._request("DELETE", f"/v2/orgs/{model.org}/members/{model.username}")
 
@@ -118,9 +120,9 @@ class DockerHubApiOrgs(DockerHubApiBase):
         envelope["data"] = validate_lenient(InvitePage, envelope["data"])
         return envelope
 
+    @destructive_operation
     def delete_invite(self, invite_id: str) -> dict[str, Any]:
         """Cancel an invite. Destructive — gated."""
-        self._guard_destructive("delete_invite")
         model = InviteModel(invite_id=invite_id)
         return self._request("DELETE", f"/v2/invites/{model.invite_id}")
 

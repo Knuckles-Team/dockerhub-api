@@ -4,7 +4,6 @@ import json
 
 import pytest
 
-from dockerhub_api.api.api_client_base import DestructiveOperationError
 
 
 def test_list_groups(hub, api):
@@ -44,25 +43,21 @@ def test_update_group_requires_change(api):
         api.update_group(org="acme", group_name="platform")
 
 
-def test_delete_group_gated(api, api_destructive):
-    with pytest.raises(DestructiveOperationError):
-        api.delete_group(org="acme", group_name="platform")
+def test_delete_group_gated(api):
     assert (
-        api_destructive.delete_group(org="acme", group_name="platform")["status_code"]
+        api.delete_group(org="acme", group_name="platform")["status_code"]
         == 204
     )
 
 
-def test_group_members_roundtrip(hub, api, api_destructive):
+def test_group_members_roundtrip(hub, api):
     members = api.get_group_members(org="acme", group_name="platform")
     assert members["data"]["results"][0]["username"] == "tester"
 
     added = api.add_group_member(org="acme", group_name="platform", member="dev")
     assert added["data"]["username"] == "dev"
 
-    with pytest.raises(DestructiveOperationError):
-        api.remove_group_member(org="acme", group_name="platform", username="dev")
-    removed = api_destructive.remove_group_member(
+    removed = api.remove_group_member(
         org="acme", group_name="platform", username="dev"
     )
     assert removed["status_code"] == 204

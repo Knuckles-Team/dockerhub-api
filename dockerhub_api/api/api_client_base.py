@@ -10,8 +10,7 @@ headers are captured into the result envelope (and kept on the client as
 ``Retry-After`` backoff.
 
 CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating. Deletes and org-settings writes
-raise :class:`DestructiveOperationError` unless the client was built with
-``allow_destructive=True``.
+are declared with the SDK ``destructive_operation`` decorator; the SDK asks the caller to confirm.
 """
 
 import logging
@@ -40,10 +39,6 @@ DEFAULT_MAX_RETRIES = 3
 DEFAULT_TIMEOUT = 30.0
 
 
-class DestructiveOperationError(PermissionError):
-    """Raised when a destructive operation is attempted while gated off."""
-
-
 class DockerHubApiBase:
     """Shared transport, auth header, retry, and envelope logic."""
 
@@ -58,7 +53,6 @@ class DockerHubApiBase:
         timeout: float = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_after_cap: float = DEFAULT_RETRY_AFTER_CAP,
-        allow_destructive: bool = False,
         debug: bool = False,
         transport: httpx.BaseTransport | None = None,
     ):
@@ -75,7 +69,6 @@ class DockerHubApiBase:
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_after_cap = retry_after_cap
-        self.allow_destructive = allow_destructive
         self.debug = debug
         #: Last rate-limit snapshot seen on any response.
         self.rate_limit: dict[str, Any] = {}
@@ -187,18 +180,6 @@ class DockerHubApiBase:
             },
             "rate_limit": dict(self.rate_limit) if self.rate_limit else {},
         }
-
-    # ------------------------------------------------------------------ #
-    # Destructive gating
-    # ------------------------------------------------------------------ #
-
-    def _guard_destructive(self, operation: str) -> None:
-        if not self.allow_destructive:
-            raise DestructiveOperationError(
-                f"Destructive operation '{operation}' is disabled. "
-                "Build the client with allow_destructive=True or set "
-                "DOCKERHUB_ALLOW_DESTRUCTIVE=True to enable it."
-            )
 
     # ------------------------------------------------------------------ #
     # Request engine

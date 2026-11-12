@@ -15,8 +15,6 @@ from scion_sdk.exceptions import (
     UnauthorizedError,
 )
 
-from dockerhub_api.api.api_client_base import DestructiveOperationError
-
 #: Keys whose values are always masked in MCP tool results.
 SECRET_KEYS = {"secret", "password", "access_token", "refresh_token", "jwt"}
 REDACTED = "***redacted***"
@@ -76,7 +74,6 @@ HANDLED_ERRORS = (
     UnauthorizedError,
     ParameterError,
     MissingParameterError,
-    DestructiveOperationError,
     ValueError,
 )
 
