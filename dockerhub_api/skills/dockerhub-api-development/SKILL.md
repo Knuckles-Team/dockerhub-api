@@ -50,7 +50,7 @@ resource content. Keep those surfaces aligned when a change crosses a boundary.
   never persist or return bearer tokens except the documented one-time create
   response.
 - Use Pydantic input and response models, typed tools, and the shared
-  agent-utilities server/agent factories.
+  meristem server/agent factories.
 - Add or update a focused test when behavior changes. Cover invalid
   parameters and the successful response shape.
 - Keep all package resources under the existing package-data globs so an sdist
