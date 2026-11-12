@@ -4,7 +4,6 @@ and destructive gating at the facade level."""
 
 import pytest
 
-from dockerhub_api.api.api_client_base import DestructiveOperationError
 from dockerhub_api.api_client import Api
 
 
@@ -46,11 +45,6 @@ def test_facade_composes_all_domain_mixins():
         assert callable(getattr(Api, method, None)), f"missing {method}"
 
 
-def test_destructive_call_blocked_by_default(api):
-    with pytest.raises(DestructiveOperationError):
-        api.delete_access_token(uuid="uuid-1")
-
-
-def test_destructive_call_allowed_when_enabled(api_destructive):
-    result = api_destructive.delete_access_token(uuid="uuid-1")
+def test_destructive_call_allowed_when_enabled(api):
+    result = api.delete_access_token(uuid="uuid-1")
     assert result["status_code"] in (200, 202, 204)

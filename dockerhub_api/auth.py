@@ -339,12 +339,6 @@ def _resolve_tls_profile(
     )
 
 
-def _resolve_allow_destructive(allow_destructive: bool | None) -> bool:
-    if allow_destructive is None:
-        return setting("DOCKERHUB_ALLOW_DESTRUCTIVE", False)
-    return allow_destructive
-
-
 @dataclass
 class _HubCredentials:
     url: str
@@ -407,7 +401,6 @@ def get_client(
     token: str | None = None,
     jwt: str | None = None,
     tls_profile: ResolvedTLSProfile | None = None,
-    allow_destructive: bool | None = None,
     config: dict | None = None,
 ) -> Any:
     """Factory for the Docker Hub :class:`~dockerhub_api.api_client.Api` client.
@@ -422,8 +415,8 @@ def get_client(
        password, a PAT ``dckr_pat_*``, or an org token).
     3. Anonymous — public, unauthenticated endpoints only.
 
-    ``DOCKERHUB_ALLOW_DESTRUCTIVE`` (default ``False``) gates deletes and
-    org-settings writes. CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating.
+    Deletes and org-settings writes are declared destructive with the SDK and ask the caller to confirm.
+    CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action gating.
 
     A resolved ``username`` (personal account or org) the caller's identity is
     not entitled to is denied before any credential exchange happens.
@@ -433,7 +426,6 @@ def get_client(
     creds = _resolve_hub_credentials(url, username, token, jwt, config)
     _deny_unless_entitled(creds.username)
     profile = _resolve_tls_profile(tls_profile)
-    allow_destructive = _resolve_allow_destructive(allow_destructive)
 
     if creds.jwt:
         logger.info("Using pre-minted Docker Hub JWT")
@@ -441,7 +433,6 @@ def get_client(
             url=creds.url,
             token=creds.jwt,
             tls_profile=profile,
-            allow_destructive=allow_destructive,
         )
 
     if creds.username and creds.token:
@@ -459,14 +450,13 @@ def get_client(
             url=creds.url,
             token_manager=manager,
             tls_profile=profile,
-            allow_destructive=allow_destructive,
         )
 
     logger.warning(
         "No Docker Hub credentials configured — anonymous client "
         "(public endpoints only). Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN."
     )
-    return Api(url=creds.url, tls_profile=profile, allow_destructive=allow_destructive)
+    return Api(url=creds.url, tls_profile=profile)
 
 
 def _resolve_credentials(
@@ -509,7 +499,6 @@ def get_registry_client(
     username: str | None = None,
     token: str | None = None,
     tls_profile: ResolvedTLSProfile | None = None,
-    allow_destructive: bool | None = None,
     config: dict | None = None,
     transport: Any | None = None,
 ) -> Any:
@@ -519,7 +508,7 @@ def get_registry_client(
     scoped tokens via :class:`RegistryTokenManager` using the same
     ``DOCKER_HUB_USER`` / ``DOCKER_HUB_TOKEN`` credentials (anonymous when
     unset, which still works for public pulls). Pushes, deletes, and blob
-    uploads are gated by ``DOCKERHUB_ALLOW_DESTRUCTIVE``.
+    uploads are declared destructive with the SDK.
 
     A resolved ``username`` (personal account or org) the caller's identity is
     not entitled to is denied before any token is minted.
@@ -541,7 +530,6 @@ def get_registry_client(
     username, token = _resolve_credentials(username, token, config)
     _deny_unless_entitled(username)
     profile = _resolve_tls_profile(tls_profile)
-    allow_destructive = _resolve_allow_destructive(allow_destructive)
 
     token_manager = RegistryTokenManager(
         username=username,
@@ -555,7 +543,6 @@ def get_registry_client(
         url=url,
         registry_token_manager=token_manager,
         tls_profile=profile,
-        allow_destructive=allow_destructive,
         transport=transport,
     )
 

@@ -41,7 +41,6 @@ Copy `.env.example` to `.env` and fill in the operator's values:
 | `DOCKERHUB_TOKEN` | — | Secret: password, PAT `dckr_pat_*`, or org access token |
 | `DOCKERHUB_JWT` | — | Optional pre-minted bearer (skips the exchange) |
 | `DOCKERHUB_TLS_PROFILE` | `system` | TLS verification |
-| `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` | Enable deletes and org-settings writes |
 | `AUTHTOOL` … `ADMINTOOL` | `True` | Per-module MCP tool toggles |
 
 ## Verify

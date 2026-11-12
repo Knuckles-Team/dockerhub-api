@@ -568,7 +568,6 @@ def hub_env(monkeypatch):
     monkeypatch.setenv("DOCKERHUB_USERNAME", "tester")
     monkeypatch.setenv("DOCKERHUB_TOKEN", "dckr_pat_unit")
     monkeypatch.delenv("DOCKERHUB_JWT", raising=False)
-    monkeypatch.delenv("DOCKERHUB_ALLOW_DESTRUCTIVE", raising=False)
 
 
 @pytest.fixture
@@ -590,11 +589,6 @@ def make_api(hub: MockHub, **overrides: Any) -> Api:
 @pytest.fixture
 def api(hub) -> Api:
     return make_api(hub)
-
-
-@pytest.fixture
-def api_destructive(hub) -> Api:
-    return make_api(hub, allow_destructive=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -898,11 +892,6 @@ def registry() -> MockRegistry:
 @pytest.fixture
 def registry_api(registry):
     return make_registry_api(registry)
-
-
-@pytest.fixture
-def registry_api_destructive(registry):
-    return make_registry_api(registry, allow_destructive=True)
 
 
 # --------------------------------------------------------------------------- #

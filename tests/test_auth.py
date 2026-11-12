@@ -167,12 +167,6 @@ def test_get_client_uses_token_manager(monkeypatch):
     assert client._token_manager.identifier == "tester"
 
 
-def test_get_client_destructive_env(monkeypatch):
-    monkeypatch.setenv("DOCKERHUB_ALLOW_DESTRUCTIVE", "True")
-    client = get_client()
-    assert client.allow_destructive is True
-
-
 def test_get_client_anonymous(monkeypatch):
     monkeypatch.delenv("DOCKERHUB_USERNAME", raising=False)
     monkeypatch.delenv("DOCKERHUB_TOKEN", raising=False)

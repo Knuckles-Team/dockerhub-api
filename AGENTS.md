@@ -106,7 +106,7 @@ dockerhub-mcp      # dockerhub_api.mcp_server:mcp_server
 ## Safety & Boundaries
 **Always do:**
 - Run lint/test via `pre-commit`.
-- Keep removes and org-settings writes behind `allow_destructive`.
+- Keep removes and org-settings writes declared with the SDK `destructive_operation` (no connector-local flag).
 
 **Ask first:**
 - Major refactors of `mcp_server.py` or `agent_server.py`.

@@ -65,8 +65,8 @@ entire domain. Modules are individually togglable with `*TOOL` environment flags
 ## Safety model
 
 - **Destructive gating** — removes (tokens, groups, members, invites) and
-  org-settings writes raise `DestructiveOperationError` unless
-  `DOCKERHUB_ALLOW_DESTRUCTIVE=True`. Repository creation is allowed by default —
+  org-settings writes ask the caller to confirm (`confirm=true`) unless the operator
+  set `SCION_ALLOW_DESTRUCTIVE`. Repository creation is allowed by default —
   it is the primary provisioning use case (creating image repos for releases).
 - **Secret redaction** — JWTs, passwords, and refresh tokens are masked in every
   tool result; the plaintext PAT/OAT value appears exactly once, on creation.

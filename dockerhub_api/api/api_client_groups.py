@@ -6,6 +6,8 @@ CONCEPT:DH-OS.identity.destructive-action-gating-member — destructive-action g
 
 from typing import Any
 
+from scion_sdk.mcp.destructive import destructive_operation
+
 from dockerhub_api.api.api_client_base import DockerHubApiBase
 from dockerhub_api.dockerhub_input_models import (
     GroupCreateModel,
@@ -99,9 +101,9 @@ class DockerHubApiGroups(DockerHubApiBase):
         envelope["data"] = validate_lenient(Group, envelope["data"])
         return envelope
 
+    @destructive_operation
     def delete_group(self, org: str, group_name: str) -> dict[str, Any]:
         """Delete a group. Destructive — gated."""
-        self._guard_destructive("delete_group")
         model = GroupModel(org=org, group_name=group_name)
         return self._request(
             "DELETE", f"/v2/orgs/{model.org}/groups/{model.group_name}"
@@ -146,11 +148,11 @@ class DockerHubApiGroups(DockerHubApiBase):
         envelope["data"] = validate_lenient(OrgMember, envelope["data"])
         return envelope
 
+    @destructive_operation
     def remove_group_member(
         self, org: str, group_name: str, username: str
     ) -> dict[str, Any]:
         """Remove a username from a group. Destructive — gated."""
-        self._guard_destructive("remove_group_member")
         model = GroupMemberModel(org=org, group_name=group_name, username=username)
         return self._request(
             "DELETE",

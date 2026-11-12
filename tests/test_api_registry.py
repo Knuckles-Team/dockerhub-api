@@ -3,7 +3,6 @@
 import httpx
 import pytest
 
-from dockerhub_api.api.api_client_base import DestructiveOperationError
 from tests.conftest import (
     AMD64_DIGEST,
     CONFIG_DIGEST,
@@ -86,45 +85,33 @@ def test_check_manifest_and_blob(registry_api):
 # --------------------------- destructive gating --------------------------- #
 
 
-def test_delete_manifest_gated_by_default(registry_api):
-    with pytest.raises(DestructiveOperationError, match="delete_manifest"):
-        registry_api.delete_manifest("nginx", "latest")
-
-
-def test_delete_manifest_resolves_tag_then_deletes(registry, registry_api_destructive):
-    result = registry_api_destructive.delete_manifest("nginx", "latest")
+def test_delete_manifest_resolves_tag_then_deletes(registry, registry_api):
+    result = registry_api.delete_manifest("nginx", "latest")
     assert result["status_code"] == 202
     paths = _registry_paths(registry)
     # tag resolved to a digest, then DELETE issued against the digest
     assert f"/v2/library/nginx/manifests/{INDEX_DIGEST}" in paths
 
 
-def test_delete_blob_surfaces_405_cleanly(registry_api_destructive):
-    result = registry_api_destructive.delete_blob("nginx", CONFIG_DIGEST)
+def test_delete_blob_surfaces_405_cleanly(registry_api):
+    result = registry_api.delete_blob("nginx", CONFIG_DIGEST)
     assert result["status_code"] == 405
 
 
-def test_push_session_gated(registry_api):
-    with pytest.raises(DestructiveOperationError):
-        registry_api.start_upload("myorg/app")
-    with pytest.raises(DestructiveOperationError):
-        registry_api.put_manifest("myorg/app", "v1", {"schemaVersion": 2}, "media")
-
-
-def test_full_push_session(registry, registry_api_destructive):
-    started = registry_api_destructive.start_upload("myorg/app")
+def test_full_push_session(registry, registry_api):
+    started = registry_api.start_upload("myorg/app")
     location = started["headers"]["Location"]
     assert started["status_code"] == 202
 
-    patched = registry_api_destructive.upload_chunk("myorg/app", location, b"layerbytes")
+    patched = registry_api.upload_chunk("myorg/app", location, b"layerbytes")
     assert patched["status_code"] == 202
 
-    completed = registry_api_destructive.complete_upload(
+    completed = registry_api.complete_upload(
         "myorg/app", location, AMD64_DIGEST, final_chunk=b""
     )
     assert completed["status_code"] == 201
 
-    put = registry_api_destructive.put_manifest(
+    put = registry_api.put_manifest(
         "myorg/app",
         "v1",
         {"schemaVersion": 2, "mediaType": "x", "config": {}, "layers": []},
@@ -133,8 +120,8 @@ def test_full_push_session(registry, registry_api_destructive):
     assert put["status_code"] == 201
 
 
-def test_mount_blob(registry_api_destructive):
-    result = registry_api_destructive.mount_blob("myorg/app", CONFIG_DIGEST, "library/nginx")
+def test_mount_blob(registry_api):
+    result = registry_api.mount_blob("myorg/app", CONFIG_DIGEST, "library/nginx")
     assert result["status_code"] == 201
 
 
