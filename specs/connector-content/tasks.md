@@ -6,3 +6,4 @@ Each task line reads `- [ ] T001 [P] [US1] <ID>-R012.4 description`. Order is pr
 
 - [x] T001 [US1] CONN-DOCKERHUB-API-CONNECTOR-CONTENT-R001 Default content.
 - [ ] T002 [US1] CONN-DOCKERHUB-API-CONNECTOR-CONTENT-R002 Declare access contracts for the competency reads of dockerhub-api.
+- [ ] T003 [US1] CONN-DOCKERHUB-API-CONNECTOR-CONTENT-R003 Destructive operations use the SDK's one declaration and guard.

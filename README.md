@@ -60,8 +60,7 @@ multi-arch inspection, OCI referrers, and gated push/remove) and **Docker Scout*
   expiry, with one transparent re-mint on 401.
 - **Rate-Limit Telemetry:** `X-RateLimit-*` headers surfaced in every result;
   HTTP 429 retried with bounded `Retry-After` backoff.
-- **Safety by Default:** Removes and org-settings writes are gated behind
-  `DOCKERHUB_ALLOW_DESTRUCTIVE` (default `False`); secrets are redacted from tool
+- **Safety by Default:** Removes and org-settings writes are declared destructive; the SDK asks the caller to confirm (`confirm=true`) before any request. Secrets are redacted from tool
   results (plaintext tokens appear exactly once — on creation). Repository creation
   stays enabled: it is the primary release-provisioning use case.
 - **Integrated Graph Agent:** Built-in Pydantic AI agent (`dockerhub-agent`) with
@@ -255,7 +254,6 @@ _9 action-routed tool(s) (default) · 54 verbose 1:1 tool(s). Each is enabled un
         "ADMINTOOL": "True",
         "AUDITTOOL": "True",
         "AUTHTOOL": "True",
-        "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
         "DOCKERHUB_TLS_PROFILE": "system",
         "DOCKERHUB_TOKEN": "dckr_pat_your_personal_access_token",
         "DOCKERHUB_URL": "https://hub.docker.com",
@@ -304,7 +302,6 @@ own runtime secret boundary.
         "ADMINTOOL": "True",
         "AUDITTOOL": "True",
         "AUTHTOOL": "True",
-        "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
         "DOCKERHUB_TLS_PROFILE": "system",
         "DOCKERHUB_TOKEN": "dckr_pat_your_personal_access_token",
         "DOCKERHUB_URL": "https://hub.docker.com",
@@ -352,7 +349,6 @@ docker run -i --rm \
   -e ADMINTOOL=True \
   -e AUDITTOOL=True \
   -e AUTHTOOL=True \
-  -e DOCKERHUB_ALLOW_DESTRUCTIVE=False \
   -e DOCKERHUB_TLS_PROFILE=system \
   -e DOCKERHUB_TOKEN=dckr_pat_your_personal_access_token \
   -e DOCKERHUB_URL=https://hub.docker.com \
@@ -399,8 +395,7 @@ the detailed transport contract.
 |---|---|---|
 | Reads (repos, tags, members, logs, SCIM) | allowed | — |
 | Repository create / immutable-tag config / invites / role updates | allowed | — |
-| Removes (PATs, OATs, groups, members, invites) | **blocked** | `DOCKERHUB_ALLOW_DESTRUCTIVE=True` |
-| Org-settings writes (`PUT /v2/orgs/{org}/settings`) | **blocked** | `DOCKERHUB_ALLOW_DESTRUCTIVE=True` |
+| Removes (PATs, OATs, groups, members, invites) and org-settings writes | confirmation required | `confirm=true` per call, or operator setting `SCION_ALLOW_DESTRUCTIVE` |
 
 ---
 
@@ -464,7 +459,6 @@ network transport, connector ingestion, Arbora delegation, or trace export.
 | `DOCKER_REGISTRY_URL` | `https://registry-1.docker.io` |  |
 | `DOCKER_REGISTRY_AUTH_URL` | `https://auth.docker.io/token` | token-service realm; auto-discovered from the 401 challenge |
 | `DOCKER_SCOUT_URL` | `https://api.scout.docker.com` |  |
-| `DOCKERHUB_ALLOW_DESTRUCTIVE` | `False` |  |
 | `AUTHTOOL` | `True` |  |
 | `REPOSTOOL` | `True` |  |
 | `ORGTOOL` | `True` |  |

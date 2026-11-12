@@ -5,6 +5,8 @@ CONCEPT:DH-OS.identity.jwt-auth-lifecycle-endpoint — JWT auth lifecycle (OAT m
 
 from typing import Any
 
+from scion_sdk.mcp.destructive import destructive_operation
+
 from dockerhub_api.api.api_client_base import DockerHubApiBase
 from dockerhub_api.dockerhub_input_models import (
     OrgAccessTokenCreateModel,
@@ -97,9 +99,9 @@ class DockerHubApiOrgAccessTokens(DockerHubApiBase):
         envelope["data"] = validate_lenient(OrgAccessToken, envelope["data"])
         return envelope
 
+    @destructive_operation
     def delete_org_access_token(self, org: str, token_id: str) -> dict[str, Any]:
         """Delete an organization access token. Destructive — gated."""
-        self._guard_destructive("delete_org_access_token")
         model = OrgAccessTokenModel(org=org, token_id=token_id)
         return self._request(
             "DELETE", f"/v2/orgs/{model.org}/access-tokens/{model.token_id}"

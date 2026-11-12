@@ -104,8 +104,7 @@ Register the server in any MCP-capable client using the template in
       "args": ["run", "dockerhub-mcp"],
       "env": {
         "DOCKERHUB_USERNAME": "youruser",
-        "DOCKERHUB_TOKEN": "dckr_pat_xxx",
-        "DOCKERHUB_ALLOW_DESTRUCTIVE": "False"
+        "DOCKERHUB_TOKEN": "dckr_pat_xxx"
       }
     }
   }
@@ -114,8 +113,8 @@ Register the server in any MCP-capable client using the template in
 
 ## Security posture
 
-- Leave `DOCKERHUB_ALLOW_DESTRUCTIVE=False` in shared deployments; enable it only
-  for operator sessions that genuinely need deletes or org-settings writes.
+- Leave `SCION_ALLOW_DESTRUCTIVE` unset in shared deployments: deletes and org-settings
+  writes then need a live confirmation. Enable it only for unattended operator sessions.
 - Prefer **organization access tokens** scoped with `TYPE_REPO` path globs over
   account-wide PATs for CI/CD.
 - Eunomia policies and OTEL/Langfuse tracing are available through the

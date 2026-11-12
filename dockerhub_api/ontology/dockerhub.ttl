@@ -1,8 +1,8 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-@prefix core: <https://knuckles-team.github.io/ontology/core#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix dc: <http://purl.org/dc/terms/> .
-@prefix : <https://knuckles-team.github.io/ontology/connector/dockerhub#> .
+@prefix : <http://knuckles.team/kg#> .
+@prefix core: <https://knuckles-team.github.io/ontology/core#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -13,14 +13,14 @@
 # per-package IRI. Backs the dockerhub-api MCP tool surface  and its native ingestion (dockerhub:repository / :image / …).
 
 :Namespace a owl:Class ;
-    rdfs:subClassOf core:ResourceGroup ;
+    rdfs:subClassOf core:Namespace ;
     rdfs:label "Docker Hub Namespace" ;
     rdfs:comment "A Docker Hub account/organization namespace that owns image repositories (the {namespace} in namespaces/{ns}/repositories)." .
 
 
 
 :ContainerImage a owl:Class ;
-    rdfs:subClassOf core:Artifact ;
+    rdfs:subClassOf core:ContainerImage ;
     rdfs:label "Container Image" ;
     rdfs:comment "A concrete, content-addressable OCI/Docker image (a repository tag resolving to a digest, size, and platform) — the repository-tag and registry-manifest tools." .
 
@@ -36,57 +36,57 @@
 :inNamespace a owl:ObjectProperty ;
     rdfs:label "in namespace" ;
     rdfs:comment "Links a Repository to the Namespace/Organization that owns it." ;
-    rdfs:domain core:Repository ;
+    rdfs:domain :Repository ;
     rdfs:range :Namespace .
 
 :hasImage a owl:ObjectProperty ;
     rdfs:label "has image" ;
     rdfs:comment "Links a Repository to a ContainerImage (tag) it holds." ;
-    rdfs:domain core:Repository ;
+    rdfs:domain :Repository ;
     rdfs:range :ContainerImage .
 
 :imageOf a owl:ObjectProperty ;
     rdfs:label "image of" ;
     rdfs:comment "Links a ContainerImage back to the Repository it belongs to." ;
     rdfs:domain :ContainerImage ;
-    rdfs:range core:Repository .
+    rdfs:range :Repository .
 
 :grantsAccessTo a owl:ObjectProperty ;
     rdfs:label "grants access to" ;
     rdfs:comment "Links a Team to a Repository it holds a permission on." ;
-    rdfs:domain core:Team ;
-    rdfs:range core:Repository .
+    rdfs:domain :Team ;
+    rdfs:range :Repository .
 
 :memberOf a owl:ObjectProperty ;
     rdfs:label "member of" ;
     rdfs:comment "Links a Person to the Organization or Team they belong to." ;
-    rdfs:domain core:Person ;
+    rdfs:domain :Person ;
     rdfs:range :Namespace .
 
 :hasVulnerability a owl:ObjectProperty ;
     rdfs:label "has vulnerability" ;
     rdfs:comment "Links a ContainerImage to a Vulnerability found by Docker Scout." ;
     rdfs:domain :ContainerImage ;
-    rdfs:range core:Vulnerability .
+    rdfs:range :Vulnerability .
 
 # --- fields (owl:DatatypeProperty) ---
 
 :isPrivate a owl:DatatypeProperty ;
     rdfs:label "is private" ;
     rdfs:comment "Whether a Repository is private (not publicly pullable)." ;
-    rdfs:domain core:Repository ;
+    rdfs:domain :Repository ;
     rdfs:range xsd:boolean .
 
 :pullCount a owl:DatatypeProperty ;
     rdfs:label "pull count" ;
     rdfs:comment "Total pulls recorded for a Repository." ;
-    rdfs:domain core:Repository ;
+    rdfs:domain :Repository ;
     rdfs:range xsd:integer .
 
 :starCount a owl:DatatypeProperty ;
     rdfs:label "star count" ;
     rdfs:comment "Total stars recorded for a Repository." ;
-    rdfs:domain core:Repository ;
+    rdfs:domain :Repository ;
     rdfs:range xsd:integer .
 
 :digest a owl:DatatypeProperty ;
@@ -123,7 +123,7 @@
     rdfs:comment "Access level a Team holds on a Repository (read, write, admin)." ;
     rdfs:range xsd:string .
 
-<https://knuckles-team.github.io/ontology/connector/dockerhub> a owl:Ontology ;
+<http://knuckles.team/kg/dockerhub> a owl:Ontology ;
     rdfs:label "Docker Hub Container Registry Ontology" ;
     rdfs:comment """Docker Hub container-registry model — namespaces and organizations,
     image repositories, tags and the concrete container images they resolve to (digest,
@@ -131,5 +131,5 @@
     Scout vulnerabilities — federated into the scion-sdk knowledge-graph hub.""" .
 
 # ontology-codemod R3
-<https://knuckles-team.github.io/ontology/connector/dockerhub#ContainerImage> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#ContainerImage> .
-<https://knuckles-team.github.io/ontology/connector/dockerhub#Namespace> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Namespace> .
+<http://knuckles.team/kg#ContainerImage> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#ContainerImage> .
+<http://knuckles.team/kg#Namespace> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Namespace> .

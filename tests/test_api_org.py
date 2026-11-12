@@ -4,7 +4,6 @@ import json
 
 import pytest
 
-from dockerhub_api.api.api_client_base import DestructiveOperationError
 
 
 def test_get_org_settings(api):
@@ -12,13 +11,8 @@ def test_get_org_settings(api):
     assert result["data"]["restricted_images"]["enabled"] is False
 
 
-def test_update_org_settings_gated(api):
-    with pytest.raises(DestructiveOperationError, match="update_org_settings"):
-        api.update_org_settings(org="acme", restricted_images_enabled=True)
-
-
-def test_update_org_settings_payload(hub, api_destructive):
-    result = api_destructive.update_org_settings(
+def test_update_org_settings_payload(hub, api):
+    result = api.update_org_settings(
         org="acme",
         restricted_images_enabled=True,
         allow_official_images=True,
@@ -72,11 +66,9 @@ def test_update_member_role(hub, api):
     assert hub.requests[-1].method == "PUT"
 
 
-def test_remove_member_gated(api, api_destructive):
-    with pytest.raises(DestructiveOperationError):
-        api.remove_org_member(org="acme", username="dev")
+def test_remove_member_gated(api):
     assert (
-        api_destructive.remove_org_member(org="acme", username="dev")["status_code"]
+        api.remove_org_member(org="acme", username="dev")["status_code"]
         == 204
     )
 
@@ -86,10 +78,8 @@ def test_list_invites(api):
     assert result["data"]["results"][0]["id"] == "inv-1"
 
 
-def test_delete_invite_gated(api, api_destructive):
-    with pytest.raises(DestructiveOperationError):
-        api.delete_invite(invite_id="inv-1")
-    assert api_destructive.delete_invite(invite_id="inv-1")["status_code"] == 204
+def test_delete_invite_gated(api):
+    assert api.delete_invite(invite_id="inv-1")["status_code"] == 204
 
 
 def test_resend_invite(hub, api):

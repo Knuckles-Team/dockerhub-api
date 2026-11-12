@@ -5,6 +5,8 @@ CONCEPT:DH-OS.identity.jwt-auth-lifecycle-endpoint — JWT auth lifecycle (PAT m
 
 from typing import Any
 
+from scion_sdk.mcp.destructive import destructive_operation
+
 from dockerhub_api.api.api_client_base import DockerHubApiBase
 from dockerhub_api.dockerhub_input_models import (
     AccessTokenCreateModel,
@@ -70,8 +72,8 @@ class DockerHubApiAccessTokens(DockerHubApiBase):
         envelope["data"] = validate_lenient(AccessToken, envelope["data"])
         return envelope
 
+    @destructive_operation
     def delete_access_token(self, uuid: str) -> dict[str, Any]:
         """Delete a personal access token. Destructive — gated."""
-        self._guard_destructive("delete_access_token")
         model = AccessTokenModel(uuid=uuid)
         return self._request("DELETE", f"/v2/access-tokens/{model.uuid}")

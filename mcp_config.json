@@ -10,7 +10,6 @@
         "ADMINTOOL": "True",
         "AUDITTOOL": "True",
         "AUTHTOOL": "True",
-        "DOCKERHUB_ALLOW_DESTRUCTIVE": "False",
         "DOCKERHUB_TLS_PROFILE": "system",
         "DOCKERHUB_TOKEN": "dckr_pat_your_personal_access_token",
         "DOCKERHUB_URL": "https://hub.docker.com",
