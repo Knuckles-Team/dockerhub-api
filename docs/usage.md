@@ -76,7 +76,7 @@ Or build it explicitly:
 from dockerhub_api.api_client import Api
 
 api = Api(url="https://hub.docker.com", username="youruser",
-          password="dckr_pat_xxx")
+          password=token)
 api.delete_access_token(uuid="...")   # destructive — served as a tool, it asks the caller to confirm
 ```
 
