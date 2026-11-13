@@ -114,6 +114,29 @@
     rdfs:comment "Timestamp a ContainerImage/tag was last pushed." ;
     rdfs:range xsd:string .
 
+:name a owl:DatatypeProperty ;
+    rdfs:label "name" ;
+    rdfs:comment "Name of a Repository or of a tag." ;
+    rdfs:range xsd:string .
+
+:lastPushedAt a owl:DatatypeProperty ;
+    rdfs:label "last pushed at" ;
+    rdfs:comment "Timestamp the Repository was last updated, as returned by the repository list." ;
+    rdfs:domain core:Repository ;
+    rdfs:range xsd:string .
+
+:lastUpdated a owl:DatatypeProperty ;
+    rdfs:label "last updated" ;
+    rdfs:comment "Timestamp a tag (ContainerImage) was last updated." ;
+    rdfs:domain :ContainerImage ;
+    rdfs:range xsd:string .
+
+:repository a owl:DatatypeProperty ;
+    rdfs:label "repository" ;
+    rdfs:comment "Identifier of the repository a tag belongs to, as returned by the tag list." ;
+    rdfs:domain :ContainerImage ;
+    rdfs:range xsd:string .
+
 :scopes a owl:DatatypeProperty ;
     rdfs:label "scopes" ;
     rdfs:comment "Granted scopes of an AccessToken (e.g. repo:read, repo:write)." ;
