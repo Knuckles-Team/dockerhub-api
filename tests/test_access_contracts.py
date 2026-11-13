@@ -10,7 +10,7 @@ from fastmcp import Client
 from scion_sdk.access_contract import parse_access_contracts
 
 import dockerhub_api.auth as hub_auth_module
-from tests.conftest import BASE_URL
+from tests.conftest import MockHub, make_api
 
 ROOT = Path(__file__).resolve().parents[1]
 ONTOLOGY = ROOT / "dockerhub_api/ontology"
@@ -26,23 +26,13 @@ def _recording(entity):
 
 
 async def _serve(monkeypatch, contract, arguments, recording):
-    from dockerhub_api.api_client import Api
-
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path.endswith("/auth/token"):
             return httpx.Response(200, json={"access_token": "fixture-token"})
         return httpx.Response(200, json=recording)
 
-    monkeypatch.setattr(
-        hub_auth_module,
-        "get_client",
-        lambda **_k: Api(
-            url=BASE_URL,
-            username="tester",
-            password="dckr_pat_unit",  # nosec B105 B106 - fake test credential
-            transport=httpx.MockTransport(handler),
-        ),
-    )
+    api = make_api(MockHub(), transport=httpx.MockTransport(handler))
+    monkeypatch.setattr(hub_auth_module, "get_client", lambda **_k: api)
     monkeypatch.setattr(sys, "argv", ["dockerhub-mcp"])
     from scion_sdk.connector import build_server
 
