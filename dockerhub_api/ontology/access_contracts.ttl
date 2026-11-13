@@ -1,0 +1,46 @@
+@prefix ac: <https://knuckles-team.github.io/ontology/access#> .
+@prefix core: <https://knuckles-team.github.io/ontology/core#> .
+@prefix dh: <https://knuckles-team.github.io/ontology/connector/dockerhub#> .
+@prefix da: <https://knuckles-team.github.io/ontology/connector/dockerhub-access#> .
+
+da:repositoryAccess a ac:AccessContract ;
+    ac:classIri core:Repository ;
+    ac:sourceId "dockerhub-api" ;
+    ac:entity "repository" ;
+    ac:keyField "name" ;
+    ac:accessKind "mcp_tool" ;
+    ac:operation "dockerhub_get_repositories" ;
+    ac:parameter "namespace", "name", "ordering", "page", "page_size" ;
+    ac:pagination "page" ;
+    ac:recordsPath "data.results" ;
+    ac:paginationParam "page" ;
+    ac:pageSizeParam "page_size" ;
+    ac:freshnessSeconds 300 ;
+    ac:costHint "low" .
+
+da:repositoryName a ac:PropertyBinding ;
+    ac:contract da:repositoryAccess ; ac:property dh:name ; ac:field "name" .
+da:repositoryLastPushedAt a ac:PropertyBinding ;
+    ac:contract da:repositoryAccess ; ac:property dh:lastPushedAt ; ac:field "last_updated" .
+da:repositoryPullCount a ac:PropertyBinding ;
+    ac:contract da:repositoryAccess ; ac:property dh:pullCount ; ac:field "pull_count" .
+
+da:tagAccess a ac:AccessContract ;
+    ac:classIri dh:ContainerImage ;
+    ac:sourceId "dockerhub-api" ;
+    ac:entity "tag" ;
+    ac:keyField "name" ;
+    ac:accessKind "mcp_tool" ;
+    ac:operation "dockerhub_get_repository_tags" ;
+    ac:parameter "namespace", "repository", "page", "page_size" ;
+    ac:pagination "page" ;
+    ac:recordsPath "data.results" ;
+    ac:paginationParam "page" ;
+    ac:pageSizeParam "page_size" ;
+    ac:freshnessSeconds 300 ;
+    ac:costHint "low" .
+
+da:tagRepository a ac:PropertyBinding ;
+    ac:contract da:tagAccess ; ac:property dh:repository ; ac:field "repository" .
+da:tagLastUpdated a ac:PropertyBinding ;
+    ac:contract da:tagAccess ; ac:property dh:lastUpdated ; ac:field "last_updated" .
