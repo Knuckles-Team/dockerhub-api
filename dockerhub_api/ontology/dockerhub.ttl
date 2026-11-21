@@ -6,26 +6,12 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix infra: <https://knuckles-team.github.io/ontology/infrastructure#> .
 
 # Docker Hub container-registry ontology — namespaces, image repositories, tags and the
 # concrete container images they resolve to, plus teams and access tokens. All classes and
 # properties live in the shared `:` (kg#) namespace; only the owl:Ontology node gets the
 # per-package IRI. Backs the dockerhub-api MCP tool surface  and its native ingestion (dockerhub:repository / :image / …).
-
-:Namespace a owl:Class ;
-    rdfs:subClassOf core:ResourceGroup ;
-    rdfs:subClassOf core:ResourceGroup ;
-    rdfs:label "Docker Hub Namespace" ;
-    rdfs:comment "A Docker Hub account/organization namespace that owns image repositories (the {namespace} in namespaces/{ns}/repositories)." .
-
-
-
-:ContainerImage a owl:Class ;
-    rdfs:subClassOf core:Artifact ;
-    rdfs:subClassOf core:Artifact ;
-    rdfs:label "Container Image" ;
-    rdfs:comment "A concrete, content-addressable OCI/Docker image (a repository tag resolving to a digest, size, and platform) — the repository-tag and registry-manifest tools." .
-
 
 :AccessToken a owl:Class ;
     rdfs:label "Access Token" ;
@@ -39,18 +25,18 @@
     rdfs:label "in namespace" ;
     rdfs:comment "Links a Repository to the Namespace/Organization that owns it." ;
     rdfs:domain core:Repository ;
-    rdfs:range :Namespace .
+    rdfs:range infra:Namespace .
 
 :hasImage a owl:ObjectProperty ;
     rdfs:label "has image" ;
     rdfs:comment "Links a Repository to a ContainerImage (tag) it holds." ;
     rdfs:domain core:Repository ;
-    rdfs:range :ContainerImage .
+    rdfs:range infra:ContainerImage .
 
 :imageOf a owl:ObjectProperty ;
     rdfs:label "image of" ;
     rdfs:comment "Links a ContainerImage back to the Repository it belongs to." ;
-    rdfs:domain :ContainerImage ;
+    rdfs:domain infra:ContainerImage ;
     rdfs:range core:Repository .
 
 :grantsAccessTo a owl:ObjectProperty ;
@@ -58,18 +44,6 @@
     rdfs:comment "Links a Team to a Repository it holds a permission on." ;
     rdfs:domain core:Team ;
     rdfs:range core:Repository .
-
-:memberOf a owl:ObjectProperty ;
-    rdfs:label "member of" ;
-    rdfs:comment "Links a Person to the Organization or Team they belong to." ;
-    rdfs:domain core:Person ;
-    rdfs:range :Namespace .
-
-:hasVulnerability a owl:ObjectProperty ;
-    rdfs:label "has vulnerability" ;
-    rdfs:comment "Links a ContainerImage to a Vulnerability found by Docker Scout." ;
-    rdfs:domain :ContainerImage ;
-    rdfs:range core:Vulnerability .
 
 # --- fields (owl:DatatypeProperty) ---
 
@@ -79,34 +53,22 @@
     rdfs:domain core:Repository ;
     rdfs:range xsd:boolean .
 
-:pullCount a owl:DatatypeProperty ;
-    rdfs:label "pull count" ;
-    rdfs:comment "Total pulls recorded for a Repository." ;
-    rdfs:domain core:Repository ;
-    rdfs:range xsd:integer .
-
 :starCount a owl:DatatypeProperty ;
     rdfs:label "star count" ;
     rdfs:comment "Total stars recorded for a Repository." ;
     rdfs:domain core:Repository ;
     rdfs:range xsd:integer .
 
-:digest a owl:DatatypeProperty ;
-    rdfs:label "digest" ;
-    rdfs:comment "Content-addressable OCI digest (sha256:...) of a ContainerImage." ;
-    rdfs:domain :ContainerImage ;
-    rdfs:range xsd:string .
-
 :architecture a owl:DatatypeProperty ;
     rdfs:label "architecture" ;
     rdfs:comment "CPU architecture of a ContainerImage (amd64, arm64, …)." ;
-    rdfs:domain :ContainerImage ;
+    rdfs:domain infra:ContainerImage ;
     rdfs:range xsd:string .
 
 :imageSize a owl:DatatypeProperty ;
     rdfs:label "image size" ;
     rdfs:comment "Full compressed size in bytes of a ContainerImage." ;
-    rdfs:domain :ContainerImage ;
+    rdfs:domain infra:ContainerImage ;
     rdfs:range xsd:integer .
 
 :lastPushed a owl:DatatypeProperty ;
@@ -119,22 +81,16 @@
     rdfs:comment "Name of a Repository or of a tag." ;
     rdfs:range xsd:string .
 
-:lastPushedAt a owl:DatatypeProperty ;
-    rdfs:label "last pushed at" ;
-    rdfs:comment "Timestamp the Repository was last updated, as returned by the repository list." ;
-    rdfs:domain core:Repository ;
-    rdfs:range xsd:string .
-
 :lastUpdated a owl:DatatypeProperty ;
     rdfs:label "last updated" ;
     rdfs:comment "Timestamp a tag (ContainerImage) was last updated." ;
-    rdfs:domain :ContainerImage ;
+    rdfs:domain infra:ContainerImage ;
     rdfs:range xsd:string .
 
 :repository a owl:DatatypeProperty ;
     rdfs:label "repository" ;
     rdfs:comment "Identifier of the repository a tag belongs to, as returned by the tag list." ;
-    rdfs:domain :ContainerImage ;
+    rdfs:domain infra:ContainerImage ;
     rdfs:range xsd:string .
 
 :scopes a owl:DatatypeProperty ;
@@ -156,5 +112,3 @@
     Scout vulnerabilities — federated into the scion-sdk knowledge-graph hub.""" .
 
 # ontology-codemod R3
-<https://knuckles-team.github.io/ontology/connector/dockerhub#ContainerImage> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#ContainerImage> .
-<https://knuckles-team.github.io/ontology/connector/dockerhub#Namespace> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Namespace> .

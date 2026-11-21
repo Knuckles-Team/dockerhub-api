@@ -2,6 +2,7 @@
 @prefix core: <https://knuckles-team.github.io/ontology/core#> .
 @prefix dh: <https://knuckles-team.github.io/ontology/connector/dockerhub#> .
 @prefix da: <https://knuckles-team.github.io/ontology/connector/dockerhub-access#> .
+@prefix infra: <https://knuckles-team.github.io/ontology/infrastructure#> .
 
 da:repositoryAccess a ac:AccessContract ;
     ac:classIri core:Repository ;
@@ -21,12 +22,12 @@ da:repositoryAccess a ac:AccessContract ;
 da:repositoryName a ac:PropertyBinding ;
     ac:contract da:repositoryAccess ; ac:property dh:name ; ac:field "name" .
 da:repositoryLastPushedAt a ac:PropertyBinding ;
-    ac:contract da:repositoryAccess ; ac:property dh:lastPushedAt ; ac:field "last_updated" .
+    ac:contract da:repositoryAccess ; ac:property infra:lastPushedAt ; ac:field "last_updated" .
 da:repositoryPullCount a ac:PropertyBinding ;
-    ac:contract da:repositoryAccess ; ac:property dh:pullCount ; ac:field "pull_count" .
+    ac:contract da:repositoryAccess ; ac:property infra:pullCount ; ac:field "pull_count" .
 
 da:tagAccess a ac:AccessContract ;
-    ac:classIri dh:ContainerImage ;
+    ac:classIri infra:ContainerImage ;
     ac:sourceId "dockerhub-api" ;
     ac:entity "tag" ;
     ac:keyField "name" ;

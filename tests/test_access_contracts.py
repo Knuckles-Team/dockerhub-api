@@ -73,7 +73,10 @@ async def test_competency_contracts_certified(monkeypatch, entity, arguments, fi
     assert {field for _, field in contract.predicates} == fields
     for prop, _ in contract.predicates:
         local = prop.rsplit("#", 1)[-1]
-        assert f":{local} a owl:DatatypeProperty" in ontology
+        assert (
+            "/ontology/connector/" not in prop
+            or f":{local} a owl:DatatypeProperty" in ontology
+        )
     payload = await _serve(monkeypatch, contract, arguments, recording)
     records = _dig(payload, contract.records_path)
     assert records
